@@ -1,4 +1,18 @@
-
+#' Generate holdout groups 
+#' 
+#' This function firstly classifies each sequence, depending on its 
+#' length, into one of the five quantiles. Then, for each quantile, 
+#' it randomly selects 1/10 of sequences for the benchmark dataset 
+#' and the remaining 9/10 of the sequences is assigned to the train-test
+#' dataset. 
+#' 
+#' @param sequences input sequences (the negative dataset)
+#' @return List of five lists, each corresponding to one quantile and
+#' comprising of two lists:
+#' \itemize{
+#'  \item{traintest}{Names of sequences selected for training and testing}
+#'  \item{benchmark}{Names of sequences selected for benchmarking}
+#'  }
 generate_holdout_groups <- function(sequences) {
   seq_length_groups <- cut(lengths(sequences), 
                            breaks = as.numeric(quantile(lengths(sequences), probs = seq(0, 1, 0.2))),

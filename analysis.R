@@ -8,7 +8,9 @@ library(visNetwork)
 if(Sys.info()[["nodename"]] == "amyloid") {
   data_path <- "/home/michal/Dropbox/AMP-analysis/AmpGram-analysis/"
 }
-
+if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
+  data_path <- "/home/kasia/Dropbox/AmpGram-analysis/"
+}
 
 source("./functions/raw_data.R")
 source("./functions/cdhit_data.R")

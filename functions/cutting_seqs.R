@@ -1,3 +1,20 @@
+#' Generates cutted sequences for construction of a negative dataset.
+#' 
+#' This function performs generating of cutted sequences to construct
+#' the negative dataset. First, it combines all the input sequences 
+#' into the one character vector. Then, it splits splits the vector 
+#' into parts of length equal to the length of the positive dataset 
+#' (AMPs after CD-HIT). Each part is further splitted into smaller 
+#' subsequences of lengths the same as lengths of sequences in the 
+#' positive dataset. To ensure the same number of sequences of the same 
+#' length in both positive and negative datasets, cutted sequences are
+#' selected by choosing each subsequence (lengths defined by AMPs) 
+#' from a randomly selected part of the vector.
+#'
+#' @param sequences input sequences
+#' @param lens lenghts of sequences in the positive dataset
+#' @return List of length equal to the length of positive dataset containing
+#' cutted sequences 
 generate_cutted_sequences <- function(sequences, lens) {
   seq_vec <- unlist(sequences, use.names = FALSE)
   
@@ -25,6 +42,10 @@ generate_cutted_sequences <- function(sequences, lens) {
 # 
 # generate_cutted_sequences(randomed_seqs, randomed_lens)
 
+#' Generate the negative dataset
+#' 
+#' Reads in the input sequences and uses \code{\link{generate_cutted_sequences}}
+#' function for construction of the negative dataset.
 read_and_cut <- function(path, lens) {
   seq_path <- paste0(path, "data/input-seqs.fasta")
   generate_cutted_sequences(read_fasta(seq_path), lens)

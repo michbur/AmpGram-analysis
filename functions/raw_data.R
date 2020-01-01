@@ -1,3 +1,12 @@
+#' Reads in the raw AMP sequences for analysis
+#' 
+#' Reads in AMP sequences from the dbAMP database and extracts those
+#' with experimental evidence for antimicrobial activity. Returns a list
+#' of two lists: 
+#' \itemize{
+#'  \item{standard}{Sequences comprised of only standard amino acids}
+#'  \item{non_standard}{Sequences containing nonstandard amino acids}
+#'  }
 read_raw_data <- function() 
   read.csv("./data/dbamp_df.csv") %T>% {
   print(paste0("Number of sequences: ", nrow(.))) 
@@ -14,14 +23,20 @@ read_raw_data <- function()
     print(paste0("Number of sequences with non-standard AA: ", length(.[["non_standard"]]))) 
   }
 
-# dla Kasi do poprawy
-#' Removes sequences too long, too short and with nonstandard letters.
+
+#' Identifies sequences containing nonstandard amino acids.
 #' 
+#' This function checks the list of sequences for presence of nonstandard 
+#' amino acids and returns a list of two lists:
+#' \itemize{
+#'  \item{standard}{Sequences comprised of only standard amino acids}
+#'  \item{non_standard}{Sequences containing nonstandard amino acids}
+#'  }
 #' @param sequences list of marked sequences (each is list of character vector 
 #'   of \code{sequence} and integer \code{target})
-#' @return Input list of length 2 \code{sequences} excluding ones that are shorther than
+#' @return Input list of length 2 \code{sequences} excluding ones that are shorter than
 #'   \code{min_length}, longer than \code{max_length} or has at least one 
-#'   aminoacid not in \code{a()[-1]}.
+#'   amino acid not in \code{a()[-1]}.
 
 purify <- function(sequences) {
   standard <- toupper(biogram:::return_elements(seq_type = "prot"))
