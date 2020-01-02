@@ -3,6 +3,8 @@ library(magrittr)
 library(drake)
 library(biogram)
 library(pbapply)
+library(ranger)
+library(cvTools)
 library(visNetwork)
 
 if(Sys.info()[["nodename"]] == "amyloid") {

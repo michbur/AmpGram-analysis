@@ -48,6 +48,7 @@ generate_cutted_sequences <- function(sequences, lens) {
 #' function for construction of the negative dataset.
 read_and_cut <- function(path, lens) {
   seq_path <- paste0(path, "data/input-seqs.fasta")
-  generate_cutted_sequences(read_fasta(seq_path), lens)
+  raw_seqs <- read_fasta(seq_path)
+  generate_cutted_sequences(purify(raw_seqs)[["standard"]], lens)
 }
 
