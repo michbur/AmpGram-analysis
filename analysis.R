@@ -6,6 +6,7 @@ library(pbapply)
 library(ranger)
 library(cvTools)
 library(visNetwork)
+library(hmeasure)
 
 if(Sys.info()[["nodename"]] == "amyloid") {
   data_path <- "/home/michal/Dropbox/AMP-analysis/AmpGram-analysis/"

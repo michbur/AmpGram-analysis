@@ -170,6 +170,13 @@
       "Repository": "CRAN",
       "Hash": "cc74b0998eb6bcc1f0d74bf54a098dc3"
     },
+    "hmeasure": {
+      "Package": "hmeasure",
+      "Version": "1.0-2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "e47493e4ce3bee0a35dce5c0a579b28a"
+    },
     "htmltools": {
       "Package": "htmltools",
       "Version": "0.4.0",
