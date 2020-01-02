@@ -35,5 +35,4 @@ generate_holdout_groups <- function(sequences) {
 # randomed_seqs <- setNames(lapply(runif(120, min = 9, max = 160), function(ith_len)
 #     sample(toupper(biogram:::return_elements("prot")), ith_len, replace = TRUE)
 #   ), paste0("P", 1L:120))
-
-generate_holdout_groups(randomed_seqs)
+# generate_holdout_groups(randomed_seqs)

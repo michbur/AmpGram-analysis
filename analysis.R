@@ -32,6 +32,6 @@ analysis_AmpGram <- drake_plan(raw_data = read_raw_data(),
                                                                 neg = negative_data,
                                                                 neg_id = negative_data_ids))
 
-make(analysis_AmpGram)
+make(analysis_AmpGram, seed = 990)
 
 # vis_drake_graph(drake_config(analysis_AmpGram))
