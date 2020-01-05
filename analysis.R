@@ -40,6 +40,6 @@ analysis_AmpGram <- drake_plan(raw_data = read_raw_data(),
                                                  neg_id = negative_data_ids),
                                ngrams = count_ampgrams(mer_df))
 
-make(analysis_AmpGram, seed = 990)
+make(analysis_AmpGram, seed = 990, jobs = 4)
 
 # vis_drake_graph(drake_config(analysis_AmpGram))
