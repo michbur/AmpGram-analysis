@@ -38,7 +38,15 @@ analysis_AmpGram <- drake_plan(raw_data = read_raw_data(),
                                                  pos_id = cdhit_data_ids,
                                                  neg = negative_data,
                                                  neg_id = negative_data_ids),
-                               ngrams = count_ampgrams(mer_df))
+                               ngrams12 = count_ampgrams(mer_df, 
+                                                         ns = c(1, rep(2, 4)),
+                                                         ds = list(0, 0, 1, 2, 3)),
+                               ngrams3_1 = count_ampgrams(mer_df, 
+                                                          ns = c(3, 3),
+                                                          ds = c(0, 0), c(0, 1)),
+                               ngrams3_2 = count_ampgrams(mer_df, 
+                                                          ns = c(3, 3),
+                                                          ds = c(1, 0), c(1, 1)))
 
 make(analysis_AmpGram, seed = 990, jobs = 4)
 
