@@ -1,7 +1,8 @@
 write_benchmark <- function(pos, pos_id, neg, neg_id) {
   seq_list <- c(pos[unlist(lapply(pos_id, function(ith_len_group) ith_len_group[["benchmark"]]))],
-    neg[unlist(lapply(neg_id, function(ith_len_group) ith_len_group[["benchmark"]]))])
-  write_fasta(seq_list, file = "results/benchmark.fasta")
+    neg[unlist(lapply(neg_id, function(ith_len_group) ith_len_group[["benchmark"]]))]) 
+  write_fasta(seq_list, file = "results/benchmark.fasta") 
+  print(paste0("Number of sequences in the benchmark dataset: ", length(seq_list))) 
 }
 
 # write_benchmark(pos = readd(cdhit_data),

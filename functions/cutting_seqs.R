@@ -28,7 +28,9 @@ generate_cutted_sequences <- function(sequences, lens) {
   pos_df <- data.frame(start = start_vec, end = end_vec, part = sample(1L:max_part, size = length(lens), replace = TRUE))
   cutted_sequences <- pblapply(1L:nrow(pos_df), function(ith_row) {
     unname(splits[[pos_df[ith_row, "part"]]][pos_df[ith_row, "start"]:pos_df[ith_row, "end"]])
-  })
+  }) %T>% {
+    print(paste0("Number of sequences in the negative dataset: ", length(.))) 
+  }
   
   names(cutted_sequences) <- paste0("CUTTED", 1L:length(cutted_sequences))
   cutted_sequences
@@ -49,6 +51,6 @@ generate_cutted_sequences <- function(sequences, lens) {
 read_and_cut <- function(path, lens) {
   seq_path <- paste0(path, "data/input-seqs.fasta")
   raw_seqs <- read_fasta(seq_path)
-  generate_cutted_sequences(purify(raw_seqs)[["standard"]], lens)
+  generate_cutted_sequences(purify(raw_seqs)[["standard"]], lens) 
 }
 
