@@ -8,7 +8,7 @@ library(cvTools)
 library(visNetwork)
 library(hmeasure)
 
-if(Sys.info()[["nodename"]] %in% c("amyloid", "phobos")) {
+if(Sys.info()[["nodename"]] %in% c("amyloid", "phobos", "huawei")) {
   data_path <- "/home/michal/Dropbox/AMP-analysis/AmpGram-analysis/"
 }
 if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
