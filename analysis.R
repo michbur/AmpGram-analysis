@@ -46,7 +46,9 @@ analysis_AmpGram <- drake_plan(raw_data = read_raw_data(),
                                                           ds = list(c(0, 0), c(0, 1))),
                                ngrams3_2 = count_ampgrams(mer_df, 
                                                           ns = c(3, 3),
-                                                          ds = list(c(1, 0), c(1, 1))))
+                                                          ds = list(c(1, 0), c(1, 1))),
+                               binary_ngrams <- cbind(ngrams12, ngrams3_1, ngrams3_2),
+                               cv_raw <- do_cv(mer_df, binary_ngrams))
 
 make(analysis_AmpGram, seed = 990)
 
