@@ -11,7 +11,7 @@ library(hmeasure)
 if(Sys.info()[["nodename"]] %in% c("amyloid", "phobos", "huawei")) {
   data_path <- "/home/michal/Dropbox/AMP-analysis/AmpGram-analysis/"
 }
-if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
+if(Sys.info()[["nodename"]] %in% c("kasia-MACH-WX9", "ryzen")) {
   data_path <- "/home/kasia/Dropbox/AmpGram-analysis/"
 }
 
