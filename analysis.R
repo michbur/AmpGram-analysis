@@ -23,6 +23,7 @@ source("./functions/holdouts.R")
 source("./functions/writing_benchmarks.R")
 source("./functions/get_mers.R")
 source("./functions/count_ampgrams.R")
+source("./functions/do_cv.R")
 
 analysis_AmpGram <- drake_plan(raw_data = read_raw_data(),
                                nonstandard_AMPs = analyze_nonstandard_AMPs(raw_data),
