@@ -54,8 +54,4 @@ make(analysis_AmpGram, seed = 990)
 
 file.copy(from = ".drake", to = paste0(data_path, "drake-cache"), recursive = TRUE, overwrite = TRUE)
 
-ampgram_cache <- drake_cache(paste0(data_path, "drake-cache/.drake"))
-ampgram_cache$import(ampgram_cache)
-
-# drake_cache(paste0(data_path, "drake-cache"))$import(drake_cache(paste0(data_path, "drake-cache")))
 # vis_drake_graph(drake_config(analysis_AmpGram))
