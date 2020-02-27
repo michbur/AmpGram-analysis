@@ -11,7 +11,7 @@ library(hmeasure)
 if(Sys.info()[["nodename"]] %in% c("amyloid", "phobos", "huawei")) {
   data_path <- "/home/michal/Dropbox/AMP-analysis/AmpGram-analysis/"
 }
-if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
+if(Sys.info()[["nodename"]] %in% c("kasia-MACH-WX9", "ryzen")) {
   data_path <- "/home/kasia/Dropbox/AmpGram-analysis/"
 }
 
@@ -23,6 +23,7 @@ source("./functions/holdouts.R")
 source("./functions/writing_benchmarks.R")
 source("./functions/get_mers.R")
 source("./functions/count_ampgrams.R")
+source("./functions/do_cv.R")
 
 analysis_AmpGram <- drake_plan(raw_data = read_raw_data(),
                                nonstandard_AMPs = analyze_nonstandard_AMPs(raw_data),
@@ -47,8 +48,8 @@ analysis_AmpGram <- drake_plan(raw_data = read_raw_data(),
                                ngrams3_2 = count_ampgrams(mer_df, 
                                                           ns = c(3, 3),
                                                           ds = list(c(1, 0), c(1, 1))),
-                               binary_ngrams <- cbind(ngrams12, ngrams3_1, ngrams3_2),
-                               cv_raw <- do_cv(mer_df, binary_ngrams))
+                               binary_ngrams = cbind(ngrams12, ngrams3_1, ngrams3_2),
+                               cv_raw = do_cv(mer_df, binary_ngrams))
 
 make(analysis_AmpGram, seed = 990)
 
