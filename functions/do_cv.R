@@ -42,5 +42,3 @@ do_cv <- function(mer_df, binary_ngrams)
 #                peptide_preds[["peptide_pred"]])[["metrics"]],
 #       fold = ith_fold,
 #       group = ith_group)
-
-do_cv(readd(mer_df), readd(binary_ngrams))
