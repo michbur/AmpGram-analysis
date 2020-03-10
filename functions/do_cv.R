@@ -8,6 +8,7 @@
 do_cv <- function(mer_df, binary_ngrams)
   lapply(unique(mer_df[["group"]]), function(ith_group) 
     lapply(unique(mer_df[["fold"]]), function(ith_fold) {
+      print(paste0(ith_group, "|", ith_fold))
       train_dat <- filter(mer_df, group == ith_group, fold != ith_fold)
       test_dat <- filter(mer_df, group == ith_group, fold == ith_fold)
       
@@ -29,12 +30,10 @@ do_cv <- function(mer_df, binary_ngrams)
       
       # single mer predictions
       #HMeasure(preds[["target"]], preds[["pred"]])[["metrics"]]
-      
 
-      
       preds[, c("source_peptide", "mer_id", "group", "fold", "target", "pred")]
-    }) %>% bind_rows()
-  ) %>% bind_rows()
+    }) %>% do.call(rbind, .)
+  ) %>% do.call(rbind, .)
  
 # peptide_preds <- group_by(preds, source_peptide, target) %>% 
 #   summarise(peptide_pred = max(pred))
