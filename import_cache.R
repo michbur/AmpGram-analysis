@@ -7,8 +7,8 @@ import_cache <- function() {
   }
   
   file.copy(from = paste0(data_path, 
-                          "drake-cache/.drake/", 
-                          list.files("drake-cache/.drake")), 
+                          "drake-cache/", 
+                          list.files("drake-cache/")), 
             to = ".drake", recursive = TRUE, overwrite = TRUE)
   
 }
