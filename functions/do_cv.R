@@ -32,9 +32,13 @@ do_cv <- function(mer_df, binary_ngrams)
       # single mer predictions
       #HMeasure(preds[["target"]], preds[["pred"]])[["metrics"]]
 
-      preds[, c("source_peptide", "mer_id", "group", "fold", "target", "pred")]
-    }) %>% do.call(rbind, .)
-  }) %>% do.call(rbind, .)
+      write.csv(x = preds[, c("source_peptide", "mer_id", "group", 
+                          "fold", "target", "pred")],
+                file = paste0(ith_group, "|", ith_fold, ".csv"), 
+                row.names = FALSE)
+      "done"
+    }) 
+  }) 
 
 # peptide_preds <- group_by(preds, source_peptide, target) %>% 
 #   summarise(peptide_pred = max(pred))
