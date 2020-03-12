@@ -34,7 +34,7 @@ do_cv <- function(mer_df, binary_ngrams)
 
       write.csv(x = preds[, c("source_peptide", "mer_id", "group", 
                           "fold", "target", "pred")],
-                file = paste0(ith_group, "|", ith_fold, ".csv"), 
+                file = paste0("./results/", ith_group, "|", ith_fold, ".csv"), 
                 row.names = FALSE)
       "done"
     }) 
