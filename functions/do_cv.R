@@ -5,12 +5,19 @@
 #                        readd(ngrams3_1, cache = ampgram_cache),
 #                        readd(ngrams3_2, cache = ampgram_cache))
 
+sort_group <- function(x) {
+  splitted_x <- sapply(strsplit(x, split = ","), function(i) i[1])
+  x_order <- order(as.numeric(gsub(pattern = "[^0-9]", 
+                                   replacement = "", x = splitted_x)))
+  x[x_order]
+}
+
 do_cv <- function(mer_df, binary_ngrams)
-  lapply(unique(mer_df[["group"]]), function(ith_group) {
+  lapply(sort_group(unique(mer_df[["group"]]))[1L:2], function(ith_group) {
     lapply(unique(mer_df[["fold"]]), function(ith_fold) {
       print(paste0(ith_group, "|", ith_fold))
       train_dat <- filter(mer_df, group == ith_group, fold != ith_fold)
-      test_dat <- filter(mer_df, group == ith_group, fold == ith_fold)
+      test_dat <- filter(mer_df, fold == ith_fold)
       
       test_bis <- test_features(train_dat[["target"]],
                                 binary_ngrams[mer_df[["group"]] == ith_group & 
@@ -34,7 +41,7 @@ do_cv <- function(mer_df, binary_ngrams)
 
       write.csv(x = preds[, c("source_peptide", "mer_id", "group", 
                           "fold", "target", "pred")],
-                file = paste0("./results/", ith_group, "|", ith_fold, ".csv"), 
+                file = paste0(data_path, "results/", ith_group, "|", ith_fold, ".csv"), 
                 row.names = FALSE)
       "done"
     }) 
