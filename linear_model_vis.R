@@ -2,6 +2,13 @@ library(dplyr)
 library(ggplot2)
 library(ggbeeswarm)
 
+sort_group <- function(x) {
+  splitted_x <- sapply(strsplit(x, split = ","), function(i) i[1])
+  x_order <- order(as.numeric(gsub(pattern = "[^0-9]", 
+                                   replacement = "", x = splitted_x)))
+  x[x_order]
+}
+
 all_cvs <- lapply(list.files("/home/michal/Dropbox/AMP-analysis/AmpGram-analysis/results/", 
            pattern = "csv", full.names = TRUE), read.csv, stringsAsFactors = FALSE) %>% 
   bind_rows() 
@@ -55,3 +62,18 @@ filter(all_cvs_pos, source_peptide %in% twenty_peps) %>%
   geom_line() +
   geom_hline(yintercept = 0.5, color = "red") +
   facet_grid(cfrac_true ~ target)
+
+group_by(all_cvs_pos, group, source_peptide, target) %>% 
+  summarise(fraction_true = mean(pred > 0.5),
+            len = length(pred) + 9) %>% 
+  mutate(cfrac_true = cut(fraction_true, breaks = 0L:5/5, 
+                          include.lowest = TRUE)) %>% 
+  group_by(group, cfrac_true, target) %>% 
+  summarise(n = length(target)) %>% 
+  ungroup() %>% 
+  mutate(group = factor(group, levels = sort_group(unique(group)))) %>% 
+  group_by(group, cfrac_true) %>% 
+  mutate(n_prop = n/sum(n)) %>% 
+  ggplot(aes(x = group, y = n_prop, fill = target)) +
+  geom_col() +
+  facet_wrap(~ cfrac_true)
