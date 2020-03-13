@@ -34,7 +34,7 @@ do_cv <- function(mer_df, binary_ngrams)
       
       preds <- mutate(test_dat,
                       pred = predict(model_cv, 
-                                     data.frame(as.matrix(binary_ngrams[mer_df[["group"]] == ith_group & mer_df[["fold"]] == ith_fold, imp_bigrams])))[["predictions"]][, "TRUE"])
+                                     data.frame(as.matrix(binary_ngrams[mer_df[["fold"]] == ith_fold, imp_bigrams])))[["predictions"]][, "TRUE"])
       
       # single mer predictions
       #HMeasure(preds[["target"]], preds[["pred"]])[["metrics"]]
