@@ -27,3 +27,31 @@ ggplot(pred_len, aes(x = len, y = n_prop, fill = cfrac_true)) +
   facet_wrap(~ target, ncol = 1) +
   theme_bw() +
   scale_x_continuous(limits = c(0, 100))
+
+
+group_by(all_cvs, source_peptide, target) %>% 
+  summarise(fraction_true = mean(pred > 0.5))
+
+
+all_cvs_pos <- group_by(all_cvs, source_peptide) %>% 
+  mutate(fraction_true = mean(mean(pred > 0.5))) %>% 
+  ungroup() %>% 
+  mutate(mer_pos = as.numeric(sapply(strsplit(mer_id, split = "m"), 
+                                     last))) %>% 
+  mutate(cfrac_true = cut(fraction_true, breaks = 0L:5/5, 
+                          include.lowest = TRUE))
+
+
+set.seed(1)
+twenty_peps <- filter(all_cvs_pos, group == "(36,60]") %>% 
+  pull(source_peptide) %>% 
+  unique %>% 
+  sample(20)
+
+filter(all_cvs_pos, source_peptide %in% twenty_peps) %>% 
+  ggplot(aes(x = mer_pos, y = pred,
+             group = source_peptide)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(yintercept = 0.5, color = "red") +
+  facet_grid(cfrac_true ~ target)
