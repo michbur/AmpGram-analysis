@@ -66,7 +66,7 @@ filter(all_cvs_pos, source_peptide %in% twenty_peps) %>%
 group_by(all_cvs_pos, group, source_peptide, target) %>% 
   summarise(fraction_true = mean(pred > 0.5),
             len = length(pred) + 9) %>% 
-  mutate(cfrac_true = cut(fraction_true, breaks = 0L:5/5, 
+  mutate(cfrac_true = cut(fraction_true, breaks = 0L:10/10, 
                           include.lowest = TRUE)) %>% 
   group_by(group, cfrac_true, target) %>% 
   summarise(n = length(target)) %>% 
@@ -76,4 +76,4 @@ group_by(all_cvs_pos, group, source_peptide, target) %>%
   mutate(n_prop = n/sum(n)) %>% 
   ggplot(aes(x = group, y = n_prop, fill = target)) +
   geom_col() +
-  facet_wrap(~ cfrac_true)
+  facet_wrap(~ cfrac_true, nrow = 1)
