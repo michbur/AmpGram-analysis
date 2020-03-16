@@ -33,7 +33,7 @@ ggplot(pred_len, aes(x = len, y = n_prop, fill = cfrac_true)) +
   geom_col() +
   facet_wrap(~ target, ncol = 1) +
   theme_bw() +
-  scale_x_continuous(limits = c(0, 100))
+  scale_x_continuous(limits = c(0, 200))
 
 
 group_by(all_cvs, source_peptide, target) %>% 
@@ -76,4 +76,5 @@ group_by(all_cvs_pos, group, source_peptide, target) %>%
   mutate(n_prop = n/sum(n)) %>% 
   ggplot(aes(x = group, y = n_prop, fill = target)) +
   geom_col() +
-  facet_wrap(~ cfrac_true, nrow = 1)
+  facet_wrap(~ cfrac_true, nrow = 1) +
+  theme(legend.position = "bottom", axis.text.x = element_text(angle = 45))

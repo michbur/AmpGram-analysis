@@ -47,6 +47,9 @@ do_cv <- function(mer_df, binary_ngrams)
     }) 
   }) 
 
+
+
+
 # peptide_preds <- group_by(preds, source_peptide, target) %>% 
 #   summarise(peptide_pred = max(pred))
 # rbind(HMeasure(as.numeric(peptide_preds[["target"]]), 
