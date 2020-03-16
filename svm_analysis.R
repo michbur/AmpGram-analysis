@@ -23,7 +23,7 @@ all_cvs <- lapply(list.files("/home/michal/Dropbox/AMP-analysis/AmpGram-analysis
   bind_rows() 
 
 layer_dat <- group_by(all_cvs, source_peptide, target, group, fold, source_file) %>% 
-  summarise(fraction_true = mean(pred > s0.5),
+  summarise(fraction_true = mean(pred > 0.5),
             pred_mean = mean(pred),
             pred_median = median(pred),
             n_peptide = length(pred),
@@ -51,7 +51,7 @@ perf <- lapply(unique(all_cvs[["source_file"]]), function(ith_learner)
     
     model_cv <- ranger(dependent.variable.name = "target", data =  ranger_train_data, 
                        write.forest = TRUE, probability = TRUE, num.trees = 500, 
-                       verbose = FALSE, importance = "impurity", classification = TRUE)
+                       verbose = FALSE, classification = TRUE)
     
     pred_df <- mutate(ranger_test_data,
                       source_peptide = ranger_test_data[["source_peptide"]],
@@ -69,6 +69,6 @@ perf <- lapply(unique(all_cvs[["source_file"]]), function(ith_learner)
   mutate(len_group = as.character(len_group), 
          len_group = factor(len_group, levels = sort_group(unique(len_group))))
 
-ggplot(perf, aes(x = source_file, y = TPR)) +
+ggplot(perf, aes(x = source_file, y = Spec)) +
   geom_point() + 
   facet_wrap( ~ len_group)
