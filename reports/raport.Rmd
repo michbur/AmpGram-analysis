@@ -1,0 +1,176 @@
+---
+title: "AmpGram"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ranger)
+library(kernlab)
+library(biogram)
+library(ggplot2)
+library(hmeasure)
+library(reshape2)
+
+load("report_data.RData")
+```
+
+### Positive dataset
+
+- Sequences from dbAMP: **12389**
+- Selected those with experimental evidence: **4271**
+- Removed those with non-standard amino acids (153): **4118** 
+- Homology reduction with CD-HIT (90%): **2463**
+
+### Negative dataset
+
+- Sequences from UniProt (NOT antimicrobial NOT annotation:(type:transit) NOT antibacterial NOT antifungal NOT antiviral AND reviewed:yes)
+- Combining all the input sequences into the one character vector
+- Splitting the vector into parts of length equal to the length of the whole positive dataset 
+- Each part is further splitted into smaller subsequences of lengths the same as lengths of sequences in the positive dataset
+- To ensure the same number of sequences of the same length in both positive and negative datasets, cutted sequences are selected by choosing each subsequence (lengths defined by AMPs) from a randomly selected part of the larger vector (length of all AMPs
+
+### Benchmark, training and testing dataset
+
+- Sequences were divided  into **5 length groups** of equal sizes: [11:19], (19,26], (26,36], (36,60], (60,710]
+- Benchmark dataset was created by selecting 1/10 of sequences from each length group: **494 sequences** (247 pos + 247 neg)
+- The rest of sequences comprise train-test dataset **4432 sequences** (2216 pos + 2216 neg)
+
+### Dataframe of mers
+
+- All peptides are divided into 5 folds and cut into 10-mers: **87716 AMP mers** and **87599 non-AMP mers**
+
+### Counting n-grams
+
+- Generation and counting of n-grams 
+
+### Cross validation
+
+- 5-fold cross validation
+
+### Prediction results
+
+- Fraction of positive mers decreases with length of the peptide
+
+```{r echo = FALSE, warning = FALSE}
+ggplot(pred_len, aes(x = len, y = n_prop, fill = cfrac_true)) +
+  geom_col() +
+  facet_wrap(~ target, ncol = 1) +
+  theme_bw() +
+  scale_x_continuous(limits = c(0, 200))
+
+```
+
+```{r echo = FALSE, warning = FALSE}
+filter(all_cvs, source_file == "(19,26]") %>% 
+  group_by(source_peptide, target) %>% 
+  summarise(fraction_true = mean(pred > 0.5),
+            len = length(pred) + 9) %>% 
+  filter(len <= 200) %>% 
+  ggplot(aes(x = len, y = fraction_true, fill = target, color = target)) +
+  geom_point(position = 'jitter') + geom_smooth(method = "lm") +
+  ylim(0, 1)
+```
+
+```{r echo = FALSE, warning = FALSE, fig.width = 10, fig.height = 10}
+filter(all_cvs, source_file == "(19,26]" & group == "(36,60]") %>% 
+  group_by(source_peptide, target) %>% 
+  summarise(fraction_true = mean(pred > 0.5),
+            len = length(pred) + 9) %>% 
+  ggplot(aes(x = factor(len), y = fraction_true, fill = target, color = target)) +
+  geom_violin(alpha = 0.5) +
+  geom_point(aes(group = target), position = 'jitter') + 
+  facet_wrap(~len, scales = "free_x")
+```
+
+20 randomly selected peptides from length group (36,60]
+
+- Some non-AMP peptides possess fragments of sequences predicted as positive.
+
+```{r fig.width = 10}
+
+set.seed(2)
+twenty_peps <- filter(all_cvs_pos, group == "(36,60]") %>% 
+  pull(source_peptide) %>% 
+  unique %>% 
+  sample(20)
+
+filter(all_cvs_pos, source_peptide %in% twenty_peps) %>% 
+  ggplot(aes(x = mer_pos, y = pred,
+             group = source_peptide)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(yintercept = 0.5, color = "red") +
+  facet_grid(cfrac_true ~ target)
+
+```
+
+20 randomly selected peptides from length group (26,36]
+
+- Some non-AMP peptides have very high fraction of positive mers.
+
+```{r echo = FALSE, fig.width = 7}
+set.seed(2)
+twenty_peps <- filter(all_cvs_pos, group == "(26,36]") %>% 
+  pull(source_peptide) %>% 
+  unique %>% 
+  sample(20)
+
+filter(all_cvs_pos, source_peptide %in% twenty_peps) %>% 
+  ggplot(aes(x = mer_pos, y = pred,
+             group = source_peptide)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(yintercept = 0.5, color = "red") +
+  facet_grid(cfrac_true ~ target)
+```
+
+### Statistics for the second layer of prediction
+
+Following statistics are calculated for each peptide:
+
+- fraction_true - fraction of positive mers
+
+- pred_mean - mean value of prediction
+
+- pred_median - median of prediction
+
+- n_peptide - number of mers in a peptide
+
+- n_pos - number of positive mers
+
+- pred_min - minimum value of prediction
+
+- pred_max - maximum value of prediction
+
+- n_pred_0.9 - number of mers with prediction > 0.9
+
+- n_pred_0.8 - number of mers with prediction > 0.8
+
+
+### Second layer - random forest
+
+```{r echo = FALSE}
+
+melt(perf_rf, id.vars = c(colnames(perf_rf)[c(1:2,4:10,13:25)]), measure.vars = c("AUC", "Sens", "Spec"), 
+     variable.name = "Measure", value.name = "Value") %>% 
+  ggplot(aes(x = source_file, y = Value, color = Measure)) +
+  geom_point(position = "jitter") +
+  facet_wrap(~ len_group)
+
+```
+
+### Second layer - other algorithms
+
+```{r echo = FALSE}
+
+all_perf %>% 
+  group_by(source_file, len_group, model) %>% 
+  summarise(mean_AUC = mean(AUC)) %>% 
+  ggplot(aes(x = source_file, y = mean_AUC, color = model)) +
+  geom_point(position = "jitter") +
+  facet_wrap(~ len_group)
+```
