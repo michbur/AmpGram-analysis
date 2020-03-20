@@ -6,7 +6,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 library(dplyr)
 library(ranger)
 library(kernlab)
@@ -71,7 +71,8 @@ filter(all_cvs, source_file == "(19,26]") %>%
             len = length(pred) + 9) %>% 
   filter(len <= 200) %>% 
   ggplot(aes(x = len, y = fraction_true, fill = target, color = target)) +
-  geom_point(position = 'jitter') + geom_smooth(method = "lm") +
+  stat_density2d(aes(alpha = ..level..), geom = "polygon", color = "black") +
+  geom_smooth(method = "lm") +
   ylim(0, 1)
 ```
 
@@ -112,7 +113,7 @@ filter(all_cvs_pos, source_peptide %in% twenty_peps) %>%
 
 - Some non-AMP peptides have very high fraction of positive mers.
 
-```{r echo = FALSE, fig.width = 7}
+```{r echo = FALSE}
 set.seed(2)
 twenty_peps <- filter(all_cvs_pos, group == "(26,36]") %>% 
   pull(source_peptide) %>% 
@@ -165,7 +166,7 @@ melt(perf_rf, id.vars = c(colnames(perf_rf)[c(1:2,4:10,13:25)]), measure.vars = 
 
 ### Second layer - other algorithms
 
-```{r echo = FALSE}
+```{r}
 
 all_perf %>% 
   group_by(source_file, len_group, model) %>% 
