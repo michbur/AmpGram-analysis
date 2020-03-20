@@ -49,7 +49,7 @@ layer_dat <- group_by(all_cvs, source_peptide, target, group, fold, source_file)
 #filter(all_cvs, source_peptide == "AMP748", source_file == ith_learner)
 
 
-perf <- lapply(unique(all_cvs[["source_file"]]), function(ith_learner) 
+all_preds <- lapply(unique(all_cvs[["source_file"]]), function(ith_learner) 
   lapply(1L:5, function(ith_fold) {
     ranger_train_data <- filter(layer_dat, 
                                 fold != ith_fold,
@@ -72,16 +72,47 @@ perf <- lapply(unique(all_cvs[["source_file"]]), function(ith_learner)
       mutate(len_group = cut(n_peptide + 9, breaks = c(0, 20, 50, 100, 200, 800),
                              include.lowest = TRUE))
     
-    lapply(unique(pred_df[["len_group"]]), function(ith_group)
-      HMeasure(true.class = filter(pred_df, len_group == ith_group)[["target"]],
-               scores = filter(pred_df, len_group == ith_group)[["pred"]])[["metrics"]] %>%
-        mutate(fold = ith_fold, source_file = ith_learner, len_group = ith_group)
-    ) %>% bind_rows
+    # lapply(unique(pred_df[["len_group"]]), function(ith_group)
+    #   HMeasure(true.class = filter(pred_df, len_group == ith_group)[["target"]],
+    #            scores = filter(pred_df, len_group == ith_group)[["pred"]])[["metrics"]] %>%
+    #     mutate(fold = ith_fold, source_file = ith_learner, len_group = ith_group)
+    # ) %>% bind_rows
+    
+    pred_df
   }) %>% bind_rows
 ) %>% bind_rows %>% 
   mutate(len_group = as.character(len_group), 
          len_group = factor(len_group, levels = sort_group(unique(len_group))))
 
-ggplot(perf, aes(x = source_file, y = Spec)) +
+
+all_perfs <- lapply(unique(all_preds[["source_file"]]), function(ith_learner) 
+  lapply(1L:5, function(ith_fold) 
+    lapply(unique(all_preds[["len_group"]]), function(ith_group) {
+      perf_dat <- filter(all_preds, 
+                         len_group == ith_group, 
+                         fold == ith_fold,
+                         source_file == ith_learner)
+      HMeasure(true.class = perf_dat[["target"]],
+               scores = perf_dat[["pred"]])[["metrics"]] %>%
+        mutate(fold = ith_fold, source_file = ith_learner, len_group = ith_group)
+    }) %>% bind_rows
+  ) %>% bind_rows
+) %>% bind_rows
+
+ggplot(all_perfs, aes(x = source_file, y = AUC)) +
   geom_point() + 
-  facet_wrap( ~ len_group)
+  facet_wrap( ~ len_group, nrow = 1)
+
+ggplot(all_preds, aes(x = len_group, y = pred_median, fill = target)) +
+  geom_violin() 
+
+ggplot(all_preds, aes(x = pred_mean, y = fraction_true, color = target)) +
+  stat_density2d(aes(alpha = ..level.., fill = target), geom = "polygon",
+                 color = "black") + 
+  facet_wrap(~ len_group)
+
+filter(all_preds, n_peptide > 100, source_file == "(19,26]") %>% 
+  ggplot(aes(x = pred_mean, y = fraction_true, color = target)) +
+  stat_density2d(aes(alpha = ..level.., fill = target), geom = "polygon",
+                 color = "black") + 
+  facet_wrap(~ len_group) 
