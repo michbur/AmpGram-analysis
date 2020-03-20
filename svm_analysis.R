@@ -22,6 +22,19 @@ all_cvs <- lapply(list.files("/home/michal/Dropbox/AMP-analysis/AmpGram-analysis
                              }) %>% 
   bind_rows() 
 
+# y <- runif(100)
+# 
+# count_longest <- function(x) {
+#   splitted_x <- strsplit(x = paste0(as.numeric(x > 0.5), collapse = ""), 
+#                          split = "0")[[1]]
+#   len <- unname(sapply(splitted_x, nchar))
+#   len[len > 0]
+# }
+# 
+# max(count_longest(y))
+# sum(count_longest(y) > 4)
+
+
 layer_dat <- group_by(all_cvs, source_peptide, target, group, fold, source_file) %>% 
   summarise(fraction_true = mean(pred > 0.5),
             pred_mean = mean(pred),
