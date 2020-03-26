@@ -14,7 +14,15 @@ sort_group <- function(x) {
 get_penultimate <- function(x)
   x[length(x) - 1]
 
-all_cvs <- lapply(list.files("/home/michal/Dropbox/AMP-analysis/AmpGram-analysis/results", 
+
+if(Sys.info()[["nodename"]] %in% c("amyloid", "phobos", "huawei")) {
+  data_path <- "/home/michal/Dropbox/AMP-analysis/AmpGram-analysis/"
+}
+if(Sys.info()[["nodename"]] %in% c("kasia-MACH-WX9", "ryzen")) {
+  data_path <- "/home/kasia/Dropbox/AmpGram-analysis/"
+}
+
+all_cvs <- lapply(list.files(paste0(data_path, "results"), 
                              pattern = "csv", full.names = TRUE), function(ith_file) {
                                read.csv(ith_file, stringsAsFactors = FALSE) %>% 
                                  mutate(source_file = get_penultimate(strsplit(ith_file, 
@@ -22,17 +30,15 @@ all_cvs <- lapply(list.files("/home/michal/Dropbox/AMP-analysis/AmpGram-analysis
                              }) %>% 
   bind_rows() 
 
-# y <- runif(100)
-# 
-# count_longest <- function(x) {
-#   splitted_x <- strsplit(x = paste0(as.numeric(x > 0.5), collapse = ""), 
-#                          split = "0")[[1]]
-#   len <- unname(sapply(splitted_x, nchar))
-#   len[len > 0]
-# }
-# 
-# max(count_longest(y))
-# sum(count_longest(y) > 4)
+count_longest <- function(x) {
+  splitted_x <- strsplit(x = paste0(as.numeric(x > 0.5), collapse = ""),
+                         split = "0")[[1]]
+  len <- unname(sapply(splitted_x, nchar))
+  if (length(len[len > 0]) == 0) {
+    0 } else {
+      len[len > 0]
+    }
+}
 
 
 layer_dat <- group_by(all_cvs, source_peptide, target, group, fold, source_file) %>% 
@@ -42,9 +48,16 @@ layer_dat <- group_by(all_cvs, source_peptide, target, group, fold, source_file)
             n_peptide = length(pred),
             n_pos = sum(pred > 0.5),
             pred_min = min(pred),
-            pred_max = max(pred)) %>% 
+            pred_max = max(pred), 
+            longest_pos = max(count_longest(pred)),
+            n_pos_10 = sum(count_longest(pred) >= 10),
+            frac_0_0.2 = sum(pred <= 0.2)/n(),
+            frac_0.2_0.4 = sum(pred > 0.2 & pred <= 0.4)/n(),
+            frac_0.4_0.6 = sum(pred > 0.4 & pred <= 0.6)/n(),
+            frac_0.6_0.8 = sum(pred > 0.6 & pred <= 0.8)/n(),
+            frac_0.8_1 = sum(pred > 0.8 & pred <= 1)/n()) %>% 
   ungroup() %>% 
-  mutate(target = factor(target))
+  mutate(target = factor(target)) 
 
 #filter(all_cvs, source_peptide == "AMP748", source_file == ith_learner)
 
