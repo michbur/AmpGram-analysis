@@ -12,5 +12,6 @@ read.csv("./data/dbamp_df.csv") %>%
   mutate(id = paste0("dbAMP_", id)) %>% 
   select(id, Name, Length, Experimental.Evidence) %>% 
   filter(Experimental.Evidence == "YES") %>% 
+  mutate(cdhit = id %in% names(readd(cdhit_data))) %>% 
   arrange(desc(Length)) %>% 
   write.csv(file = "lengths.csv", row.names = FALSE)

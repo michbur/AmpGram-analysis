@@ -8,15 +8,17 @@
 #'  \item{non_standard}{Sequences containing nonstandard amino acids}
 #'  }
 read_raw_data <- function() 
-  read.csv("./data/dbamp_df.csv") %T>% {
+  read.csv("./data/dbamp_df.csv") %>% 
+  mutate(id = 1L:nrow(.)) %>% 
+  mutate(id = sapply(id, paste_to_five)) %>% 
+  mutate(id = paste0("dbAMP_", id)) %T>% {
   print(paste0("Number of sequences: ", nrow(.))) 
 } %>%
   filter(Experimental.Evidence == "YES") %T>% {
     print(paste0("Number of sequences: ", nrow(.))) 
+  } %>% {
+    setNames(as.character(.[["Sequence"]]), .[["id"]])
   } %>% 
-  pull(Sequence) %>% 
-  as.character() %>%
-  setNames(., paste0("AMP", 1L:length(.))) %>% 
   strsplit("") %>% 
   purify() %T>% {
     print(paste0("Number of sequences with standard AA: ", length(.[["standard"]]))) 
@@ -45,3 +47,9 @@ purify <- function(sequences) {
   list(standard = sequences[is_standard],
        non_standard = sequences[!is_standard])
 }
+
+#' function used to give dbAMP ids
+paste_to_five <- function(x) {
+  paste0(paste0(rep("0", 5 - nchar(x)), collapse = ""), x)
+}
+
