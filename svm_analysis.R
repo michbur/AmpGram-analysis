@@ -115,17 +115,3 @@ all_perfs <- lapply(unique(all_preds[["source_file"]]), function(ith_learner)
 ggplot(all_perfs, aes(x = source_file, y = AUC)) +
   geom_point() + 
   facet_wrap( ~ len_group, nrow = 1)
-
-ggplot(all_preds, aes(x = len_group, y = pred_median, fill = target)) +
-  geom_violin() 
-
-ggplot(all_preds, aes(x = pred_mean, y = fraction_true, color = target)) +
-  stat_density2d(aes(alpha = ..level.., fill = target), geom = "polygon",
-                 color = "black") + 
-  facet_wrap(~ len_group)
-
-filter(all_preds, n_peptide > 100, source_file == "(19,26]") %>% 
-  ggplot(aes(x = pred_mean, y = fraction_true, color = target)) +
-  stat_density2d(aes(alpha = ..level.., fill = target), geom = "polygon",
-                 color = "black") + 
-  facet_wrap(~ len_group) 
