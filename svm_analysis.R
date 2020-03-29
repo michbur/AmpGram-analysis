@@ -100,9 +100,9 @@ all_preds <- lapply(unique(all_cvs[["source_file"]]), function(ith_learner)
 
 all_perfs <- lapply(unique(all_preds[["source_file"]]), function(ith_learner) 
   lapply(1L:5, function(ith_fold) 
-    lapply(unique(all_preds[["len_group"]]), function(ith_group) {
+    lapply(unique(all_preds[["group"]]), function(ith_group) {
       perf_dat <- filter(all_preds, 
-                         len_group == ith_group, 
+                         group == ith_group, 
                          fold == ith_fold,
                          source_file == ith_learner)
       HMeasure(true.class = perf_dat[["target"]],
