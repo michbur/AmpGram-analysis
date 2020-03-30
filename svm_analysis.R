@@ -107,11 +107,19 @@ all_perfs <- lapply(unique(all_preds[["source_file"]]), function(ith_learner)
                          source_file == ith_learner)
       HMeasure(true.class = perf_dat[["target"]],
                scores = perf_dat[["pred"]])[["metrics"]] %>%
-        mutate(fold = ith_fold, source_file = ith_learner, len_group = ith_group)
+        mutate(fold = ith_fold, source_file = ith_learner, group = ith_group)
     }) %>% bind_rows
   ) %>% bind_rows
-) %>% bind_rows
+) %>% 
+  bind_rows %>% 
+  mutate(group = factor(group, levels = sort_group(unique(group))))
 
+png(filename = "cv_res.png", width = 780, height = 500)
 ggplot(all_perfs, aes(x = source_file, y = AUC)) +
   geom_point() + 
-  facet_wrap( ~ len_group, nrow = 1)
+  stat_summary(fun.y = mean, geom = "point", color = "red", size = 4) +
+  facet_wrap( ~ group, nrow = 1) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45))
+dev.off()
+
