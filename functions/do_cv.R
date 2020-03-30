@@ -52,6 +52,45 @@ do_cv <- function(mer_df, binary_ngrams) {
 }
 
 
+do_cv_degenerate <- function(mer_df, binary_ngrams, elements_group) {
+  possible_groups <- sort_group(unique(mer_df[["group"]]))[1L:2]
+  group_combs <- list(possible_groups[1], possible_groups[2], c(possible_groups))
+  deg_binary_ngrams <- degenerate_ngrams(binary_ngrams, elements_group)
+  lapply(group_combs, function(ith_group) {
+    lapply(unique(mer_df[["fold"]]), function(ith_fold) {
+      print(paste0(ith_group, "|", ith_fold))
+      train_dat <- filter(mer_df, group %in% ith_group, fold != ith_fold)
+      test_dat <- filter(mer_df, fold == ith_fold)
+      
+      test_bis <- test_features(train_dat[["target"]],
+                                deg_binary_ngrams[mer_df[["group"]] %in% ith_group & 
+                                                mer_df[["fold"]] != ith_fold, ])
+      
+      imp_bigrams <- cut(test_bis, breaks = c(0, 0.05, 1))[[1]]
+      
+      ranger_train_data <- data.frame(as.matrix(deg_binary_ngrams[mer_df[["group"]] %in% ith_group & 
+                                                                mer_df[["fold"]] != ith_fold, imp_bigrams]),
+                                      tar = as.factor(train_dat[["target"]]))
+      model_cv <- ranger(dependent.variable.name = "tar", data =  ranger_train_data, 
+                         write.forest = TRUE, probability = TRUE, num.trees = 2000, 
+                         verbose = FALSE)
+      
+      preds <- mutate(test_dat,
+                      pred = predict(model_cv, 
+                                     data.frame(as.matrix(deg_binary_ngrams[mer_df[["fold"]] == ith_fold, imp_bigrams])))[["predictions"]][, "TRUE"])
+      
+      
+      # write.csv(x = preds[, c("source_peptide", "mer_id", "group",
+      #                         "fold", "target", "pred")],
+      #           file = paste0(data_path, "results/", paste0(ith_group, collapse = "_"),
+      #                         "|", ith_fold, ".csv"),
+      #           row.names = FALSE)
+      "done"
+    }) 
+  }) 
+}
+
+
 
 # peptide_preds <- group_by(preds, source_peptide, target) %>% 
 #   summarise(peptide_pred = max(pred))
