@@ -61,7 +61,7 @@ do_cv <- function(mer_df, binary_ngrams) {
 do_cv_degenerate <- function(mer_df, binary_ngrams, elements_groups) {
   lapply(elements_groups, function(ith_alphabet){
     print(paste0("alphabet ", which(elements_groups == ith_alphabet), "/", length(elements_groups)))
-    deg_binary_ngrams <- degenerate_ngrams(binary_ngrams, string2list(ith_alphabet))
+    deg_binary_ngrams <- degenerate_ngrams(binary_ngrams, string2list(ith_alphabet), binarize = TRUE)
     do_cv(mer_df, deg_binary_ngrams) %>% 
       mutate(alphabet = ith_alphabet)
   })

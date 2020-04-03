@@ -21,15 +21,15 @@ create_traits_combination <- function(ftraits) {
 
 
 
-#' Create encodings
+#' Create alphabets
 #'
-#' Creates encodings (3-6 groups long) from list of traits.
+#' Creates alphabets (3-6 groups long) from list of traits.
 #' @param ftraits a vector of trait indices in the expanded aaindex table
 #' create by \code{\link{choose_properties}}.
 #' @param list_duplicates if \code{TRUE} returns also a list of duplicates.
-#' @return a named vector of encodings (for example 
+#' @return a named vector of alphabets (for example 
 #' \code{iknty_degpqrs_acfhlmvw})
-create_encodings <- function(list_duplicates = FALSE) {
+create_alphabets <- function(list_duplicates = FALSE) {
   
   paste_enc <- function(x)
     paste0(sapply(x, paste0, collapse = ""), collapse = "_")
@@ -44,7 +44,7 @@ create_encodings <- function(list_duplicates = FALSE) {
   grouping_properties <- aaprop[ftraits, ]
   all_traits_combn_list <- create_traits_combination(ftraits)
   
-  #create encodings
+  #create alphabets
   all_aa_groups <- pblapply(3L:6, function(single_k) {
     res <- unlist(lapply(all_traits_combn_list, function(all_traits_combn)
       vapply(1L:nrow(all_traits_combn), function(single_trait_combn) {
@@ -55,7 +55,7 @@ create_encodings <- function(list_duplicates = FALSE) {
         gr <- cutree(cl, k = single_k)
         names(gr) <- tolower(names(gr))
         agg_gr <- lapply(unique(gr), function(single_group) names(gr[gr == single_group]))
-        #inside encodings, amino acids are ordered alphabetically
+        #inside alphabets, amino acids are ordered alphabetically
         agg_gr <- lapply(agg_gr, sort)
         #groups are sorted by their length
         paste_enc(agg_gr[order(lengths(agg_gr))])
@@ -64,7 +64,7 @@ create_encodings <- function(list_duplicates = FALSE) {
     res
   })
   
-  #get indices of unique encodings
+  #get indices of unique alphabets
   aa_id <- lapply(all_aa_groups, function(i) !duplicated(i))
   
   aa_duplicates <- unlist(lapply(1L:length(aa_id), function(i) 
@@ -73,12 +73,12 @@ create_encodings <- function(list_duplicates = FALSE) {
   ), recursive = FALSE)
   #aa_duplicates <- aa_duplicates[lengths(aa_duplicates) > 1]
   
-  #remove from aa_groups redundant encodings
+  #remove from aa_groups redundant alphabets
   aa_groups <- unlist(lapply(1L:length(aa_id), function(i) {
     all_aa_groups[[i]][aa_id[[i]]]
   }), recursive = FALSE)
   
-  #add as a benchmark two encodings from the literature
+  #add as a benchmark two alphabets from the literature
   aa1 = list(`1` = c("g", "a", "p", "v", "l", "i", "m"), 
              `2` = c("k", "r", "h"), 
              `3` = c("d", "e"), 
@@ -97,7 +97,7 @@ create_encodings <- function(list_duplicates = FALSE) {
   }
 }
 
-create_encodings()
+create_alphabets()
 
 
 
