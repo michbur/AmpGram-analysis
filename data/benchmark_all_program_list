@@ -1,0 +1,3 @@
+ ADAM-SVM,	AMPScannerV2,	Amylogram,	AVPred,	ADAM-HMM,     iAMP (2L),	CAMP3-ANN,    CAMP3-DA,     CAMP3-RF,     CAMP3-SVM 
+
++ w pliku iAMPpred_benchmark.csv  znajduje się benchmark programu iAMPpred który zwraca prawdopodobieństwo ale z podziałem na przeciw-: bakteryjne, wirusowe, grzybowe 
