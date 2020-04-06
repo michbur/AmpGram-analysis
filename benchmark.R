@@ -42,7 +42,9 @@ MCC <- group_by(all_benchmark_res, Software) %>%
             TN = as.numeric(sum(Decision == FALSE & target == "FALSE")),
             FP = as.numeric(sum(Decision == TRUE & target == "FALSE")),
             FN = as.numeric(sum(Decision == FALSE & target == "TRUE"))) %>% 
-  mutate(MCC = (TP*TN - FP*FN)/sqrt((TP + FP)*(TP + FN)*(TN + FP)*(TN + FN)))
+  mutate(MCC = (TP*TN - FP*FN)/sqrt((TP + FP)*(TP + FN)*(TN + FP)*(TN + FN)),
+         Sensitivity = TP/(TP+FN),
+         Specificity = TN/(TN+FP))
 
 AUC <- filter(all_benchmark_res, !is.na(Probability)) %>% 
   group_by(Software) %>% 
@@ -50,6 +52,10 @@ AUC <- filter(all_benchmark_res, !is.na(Probability)) %>%
 
 ggplot(AUC, aes(x = Software, y = AUC)) +
   geom_point()
+
+ggplot(MCC, aes(x = Software, y = MCC)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 45))
 
 ggplot(MCC, aes(x = Software, y = MCC)) +
   geom_point() +
