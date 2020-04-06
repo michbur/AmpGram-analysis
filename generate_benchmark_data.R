@@ -71,14 +71,13 @@ train_model_peptides_full_alphabet <- function(mer_statistics) {
   model_cv
 }
 
-# 
+
 # mer_preds <- do_cv(readd(mer_df), readd(binary_ngrams)) %>%
 #   filter(source_file == "[11,19]_(19,26]")
+# mer_preds <- all_cvs
 # imp_bigrams <- calc_imp_bigrams(readd(mer_df), readd(binary_ngrams), c("[11,19]", "(19,26]"))
 # model_mers_full_alphabet <- train_model_mers_full_alphabet(readd(mer_df), c("[11,19]", "(19,26]"), readd(binary_ngrams), imp_bigrams)
 # 
-# train_data_peptides <- calculate_statistics(mer_preds) %>% 
-#   
 # model_peptides_full_alphabet <- train_model_peptides_full_alphabet(calculate_statistics(mer_preds))
 # 
 # benchmark_mer_df <- read_fasta("./results/benchmark.fasta") %>%
@@ -91,3 +90,4 @@ train_model_peptides_full_alphabet <- function(mer_statistics) {
 # 
 # save(list = c("mer_preds", "model_mers_full_alphabet", "imp_bigrams", "model_peptides_full_alphabet", "benchmark_mer_df", "benchmark_ngrams"),
 #      file = "./data/benchmark_data.RData")
+
