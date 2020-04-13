@@ -54,7 +54,7 @@ analysis_AmpGram <- drake_plan(raw_data = read_raw_data(),
                                alphabets = create_alphabets(),
                                cv_degenerate = do_cv_degenerate(mer_df, binary_ngrams, alphabets))
 
-make(analysis_AmpGram, seed = 990)
+make(analysis_AmpGram, seed = 990, jobs = 8)
 
 file.copy(from = ".drake", to = paste0(data_path, "drake-cache"), recursive = TRUE, overwrite = TRUE)
 
