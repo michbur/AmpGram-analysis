@@ -34,14 +34,16 @@ len_groups <- select(benchmark_stats, c("source_peptide", "len_group"))
 
 iAMPpred <- read.delim("./data/iAMPpred_benchmark.csv")[,-1] %>% 
   setNames(c("source_peptide", "iAMPpred_antibact", "iAMPpred_antivir", "iAMPpred_antifung")) %>% 
-  gather(Software, Probability, iAMPpred_antibact:iAMPpred_antifung)
+  tidyr::gather(Software, Probability, iAMPpred_antibact:iAMPpred_antifung)
 
 all_benchmark_res <- read.csv("./data/benchmark_all.csv") %>% 
   setNames(c("Software", "source_peptide", "Decision", "Probability")) %>% 
   bind_rows(benchmark_peptide_preds[, c(1,4:6)]) %>% 
-  bind_rows(iAMPpred)
+  bind_rows(iAMPpred) %>% 
+  mutate(source_peptide = gsub("DBAMP", "dbAMP_", source_peptide),
+         source_peptide = gsub("dbAMP", "dbAMP_", source_peptide),
+         source_peptide = gsub("__", "_", source_peptide))
 
-all_benchmark_res[["source_peptide"]] <- gsub("DBAMP", "dbAMP_", all_benchmark_res[["source_peptide"]])
 all_benchmark_res[["Decision"]][all_benchmark_res[["Software"]] %in% c("Amylogram", "iAMPpred_antibact", "iAMPpred_antivir", "iAMPpred_antifung")] <- ifelse(
   (all_benchmark_res[["Probability"]][all_benchmark_res[["Software"]] %in% c("Amylogram", "iAMPpred_antibact", "iAMPpred_antivir", "iAMPpred_antifung")] >= 0.5), 
   TRUE, FALSE)
@@ -49,6 +51,26 @@ all_benchmark_res[["Decision"]][all_benchmark_res[["Software"]] %in% c("Amylogra
 all_benchmark_res <- mutate(all_benchmark_res, target = ifelse(str_detect(source_peptide, "dbAMP"), "TRUE", "FALSE")) %>% 
   left_join(len_groups, by = "source_peptide")
 
+
+
+unique(all_benchmark_res[["len_group"]])
+
+benchmark_summ <- lapply(unique(all_benchmark_res[["Software"]]), function(ith_software) {
+  lapply(unique(all_benchmark_res[["len_group"]]), function(ith_length) {
+    ith_dat <- filter(all_benchmark_res, Software == ith_software,
+                      len_group == ith_length)
+    browser()
+    # AUC, MCC, recall, precision, sens, spec
+    # ith_res <- if(all(is.na(ith_dat[["Probability"]]))) {
+    #   mutate(HMeasure(ith_dat[["target"]], ith_dat[["Decision"]])[["metrics"]],
+    #          prob = FALSE)
+    # } else {
+    #   mutate(HMeasure(ith_dat[["target"]], ith_dat[["Probability"]])[["metrics"]],
+    #          prob = TRUE)
+    # }
+    mutate(ith_res, MCC = calc_mcc(TP, TN, FP, FN))
+  }) %>% bind_rows()
+}) %>% bind_rows()
 
 MCC <- group_by(all_benchmark_res, Software) %>% 
   summarise(TP = as.numeric(sum(Decision == TRUE & target == "TRUE")),
@@ -66,7 +88,7 @@ AUC <- filter(all_benchmark_res, !is.na(Probability)) %>%
 
 plot_data <- left_join(MCC, AUC, by = "Software") %>% 
   filter(Software != 'Amylogram') %>% 
-  gather(Measure, Value, TP:AUC) 
+  tidyr::gather(Measure, Value, TP:AUC) 
 
 ggplot(filter(plot_data, Measure == "AUC" & !is.na(Value)), aes(x = Software, y = Value)) +
   geom_point() +
@@ -88,7 +110,7 @@ MCC_lens <- group_by(all_benchmark_res, Software, len_group) %>%
          Sensitivity = TP/(TP+FN),
          Specificity = TN/(TN+FP)) %>% 
   filter(Software != 'Amylogram') %>% 
-  gather(Measure, Value, TP:Specificity) 
+  tidyr::gather(Measure, Value, TP:Specificity) 
 
 AUC_lens <- filter(all_benchmark_res, !is.na(Probability)) %>% 
   group_by(Software, len_group) %>% 
