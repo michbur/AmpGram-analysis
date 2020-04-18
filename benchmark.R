@@ -5,6 +5,7 @@ library(biogram)
 library(stringr)
 library(ggplot2)
 library(tidyr)
+requireNamespace("mlr3measures")
 
 load("./data/benchmark_data.RData")
 source("./generate_benchmark_data.R")
@@ -58,19 +59,47 @@ unique(all_benchmark_res[["len_group"]])
 benchmark_summ <- lapply(unique(all_benchmark_res[["Software"]]), function(ith_software) {
   lapply(unique(all_benchmark_res[["len_group"]]), function(ith_length) {
     ith_dat <- filter(all_benchmark_res, Software == ith_software,
-                      len_group == ith_length)
-    browser()
-    # AUC, MCC, recall, precision, sens, spec
-    # ith_res <- if(all(is.na(ith_dat[["Probability"]]))) {
-    #   mutate(HMeasure(ith_dat[["target"]], ith_dat[["Decision"]])[["metrics"]],
-    #          prob = FALSE)
-    # } else {
-    #   mutate(HMeasure(ith_dat[["target"]], ith_dat[["Probability"]])[["metrics"]],
-    #          prob = TRUE)
-    # }
-    mutate(ith_res, MCC = calc_mcc(TP, TN, FP, FN))
+                      len_group == ith_length) %>% 
+      mutate(target = as.factor(target),
+             Decision = as.factor(Decision))
+    # For softwares without probabilities AUC is calculated with hmeasure using decision.
+    # For AVPred in two largest len groups scores were switched by hmeasure, so the result is subtracted from one
+    ith_res <- if(ith_software == "AVPred" & ith_length %in% unique(all_benchmark_res[["len_group"]])[4:5]) {
+      data.frame(AUC = 1 - HMeasure(ith_dat[["target"]], as.logical(ith_dat[["Decision"]]))[["metrics"]][["AUC"]],
+                 prob = FALSE)
+    } else if(all(is.na(ith_dat[["Probability"]]))) {
+      data.frame(AUC = HMeasure(ith_dat[["target"]], as.logical(ith_dat[["Decision"]]))[["metrics"]][["AUC"]],
+             prob = FALSE)
+      # For softwares with probabilities AUC is calculated with mlr3measures using probabilities
+    } else {
+      data.frame(AUC = mlr3measures::auc(ith_dat[["target"]], ith_dat[["Probability"]], "TRUE"),
+             prob = TRUE)
+    }
+    # Statistics below can be calculated only if there are two levels of decisions
+    if(length(levels(ith_dat[["Decision"]])) == 2) {
+    mutate(ith_res,
+           Software = ith_software,
+           len_group = ith_length,
+           MCC = mlr3measures::mcc(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
+           recall = mlr3measures::recall(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
+           precision = mlr3measures::precision(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
+           sensitivity = mlr3measures::sensitivity(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
+           specificity = mlr3measures::specificity(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"))
+    } else {
+      mutate(ith_res,
+             Software = ith_software,
+             len_group = ith_length)
+    }
   }) %>% bind_rows()
 }) %>% bind_rows()
+
+
+ggplot(benchmark_summ, aes(x = Software, y = AUC)) +
+  geom_point() +
+  facet_wrap(~ len_group) +
+  theme(axis.text.x = element_text(angle = 45))
+
+
 
 MCC <- group_by(all_benchmark_res, Software) %>% 
   summarise(TP = as.numeric(sum(Decision == TRUE & target == "TRUE")),
