@@ -10,8 +10,6 @@ requireNamespace("mlr3measures")
 load("./data/benchmark_data.RData")
 source("./generate_benchmark_data.R")
 
-calc_mcc <- function(TP, TN, FP, FN)
-  (TP*TN - FP*FN)/sqrt((TP + FP)*(TP + FN)*(TN + FP)*(TN + FN))
 
 benchmark_mer_preds <- mutate(benchmark_mer_df,
                               pred = predict(model_mers_full_alphabet, 
@@ -25,7 +23,7 @@ benchmark_stats <- calculate_statistics(benchmark_mer_preds) %>%
 
 benchmark_peptide_preds <- mutate(benchmark_stats[, c(1:2,17)],
                                   Probability = predict(model_peptides_full_alphabet, 
-                                                 benchmark_stats[, 3:16])[["predictions"]][, "TRUE"],
+                                                        benchmark_stats[, 3:16])[["predictions"]][, "TRUE"],
                                   Decision = ifelse(Probability >= 0.5, TRUE, FALSE),
                                   Software = "AmpGram_full") 
 #HMeasure(benchmark_peptide_preds[["target"]], benchmark_peptide_preds[["Probability"]])[["metrics"]]
@@ -69,22 +67,22 @@ benchmark_summ <- lapply(unique(all_benchmark_res[["Software"]]), function(ith_s
                  prob = FALSE)
     } else if(all(is.na(ith_dat[["Probability"]]))) {
       data.frame(AUC = HMeasure(ith_dat[["target"]], as.logical(ith_dat[["Decision"]]))[["metrics"]][["AUC"]],
-             prob = FALSE)
+                 prob = FALSE)
       # For softwares with probabilities AUC is calculated with mlr3measures using probabilities
     } else {
       data.frame(AUC = mlr3measures::auc(ith_dat[["target"]], ith_dat[["Probability"]], "TRUE"),
-             prob = TRUE)
+                 prob = TRUE)
     }
     # Statistics below can be calculated only if there are two levels of decisions
     if(length(levels(ith_dat[["Decision"]])) == 2) {
-    mutate(ith_res,
-           Software = ith_software,
-           len_group = ith_length,
-           MCC = mlr3measures::mcc(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
-           recall = mlr3measures::recall(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
-           precision = mlr3measures::precision(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
-           sensitivity = mlr3measures::sensitivity(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
-           specificity = mlr3measures::specificity(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"))
+      mutate(ith_res,
+             Software = ith_software,
+             len_group = ith_length,
+             MCC = mlr3measures::mcc(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
+             recall = mlr3measures::recall(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
+             precision = mlr3measures::precision(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
+             sensitivity = mlr3measures::sensitivity(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
+             specificity = mlr3measures::specificity(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"))
     } else {
       mutate(ith_res,
              Software = ith_software,
@@ -101,56 +99,34 @@ ggplot(benchmark_summ, aes(x = Software, y = AUC)) +
 
 
 
-MCC <- group_by(all_benchmark_res, Software) %>% 
-  summarise(TP = as.numeric(sum(Decision == TRUE & target == "TRUE")),
-            TN = as.numeric(sum(Decision == FALSE & target == "FALSE")),
-            FP = as.numeric(sum(Decision == TRUE & target == "FALSE")),
-            FN = as.numeric(sum(Decision == FALSE & target == "TRUE"))) %>% 
-  mutate(MCC = (TP*TN - FP*FN)/sqrt((TP + FP)*(TP + FN)*(TN + FP)*(TN + FN)),
-         Sensitivity = TP/(TP+FN),
-         Specificity = TN/(TN+FP))
-
-AUC <- filter(all_benchmark_res, !is.na(Probability)) %>% 
+# AUC without len groups
+filter(all_benchmark_res, !is.na(Probability)) %>% 
   group_by(Software) %>% 
-  summarise(AUC = HMeasure(target, Probability)[["metrics"]][["AUC"]])
+  summarise(AUC = mlr3measures::auc(as.factor(target), Probability, "TRUE")) %>% 
+  ggplot(aes(x = Software, y = AUC)) +
+  geom_point()
 
 
-plot_data <- left_join(MCC, AUC, by = "Software") %>% 
-  filter(Software != 'Amylogram') %>% 
-  tidyr::gather(Measure, Value, TP:AUC) 
-
-ggplot(filter(plot_data, Measure == "AUC" & !is.na(Value)), aes(x = Software, y = Value)) +
-  geom_point() +
-  theme(axis.text.x = element_text(angle = 45)) +
-  labs(y = "AUC")
-
-ggplot(filter(plot_data, Measure %in% c("MCC", "Sensitivity", "Specificity")), aes(x = Software, y = Value, color = Measure)) +
-  geom_point() +
-  theme(axis.text.x = element_text(angle = 45))
 
 
-# measures by len_group
-MCC_lens <- group_by(all_benchmark_res, Software, len_group) %>% 
-  summarise(TP = as.numeric(sum(Decision == TRUE & target == "TRUE")),
-            TN = as.numeric(sum(Decision == FALSE & target == "FALSE")),
-            FP = as.numeric(sum(Decision == TRUE & target == "FALSE")),
-            FN = as.numeric(sum(Decision == FALSE & target == "TRUE"))) %>% 
-  mutate(MCC = (TP*TN - FP*FN)/sqrt((TP + FP)*(TP + FN)*(TN + FP)*(TN + FN)),
-         Sensitivity = TP/(TP+FN),
-         Specificity = TN/(TN+FP)) %>% 
-  filter(Software != 'Amylogram') %>% 
-  tidyr::gather(Measure, Value, TP:Specificity) 
+### Benchmark without peptides from APD
 
-AUC_lens <- filter(all_benchmark_res, !is.na(Probability)) %>% 
-  group_by(Software, len_group) %>% 
-  summarise(AUC = HMeasure(target, Probability)[["metrics"]][["AUC"]])
+apd <- read.csv("./data/apd_df.csv", stringsAsFactors = FALSE)
+all_benchmark_sequences <- read_fasta("./results/benchmark.fasta")
+benchmark_names <- names(all_benchmark_sequences)[grepl('dbAMP', names(all_benchmark_sequences))]
 
-ggplot(AUC_lens, aes(x = Software, y = AUC)) +
-  geom_point() +
-  facet_wrap(~len_group, ncol = 2) +
-  theme(axis.text.x = element_text(angle = 45))
+benchmark_seqs <- lapply(1L:(length(all_benchmark_sequences)/2), function(i){
+  paste(all_benchmark_sequences[[i]], collapse = "")
+}) %>% unlist()
 
-ggplot(filter(MCC_lens, Measure %in% c("MCC", "Specificity", "Sensitivity")), aes(x = Software, y = Value, color = Measure)) +
-  geom_point() +
-  facet_wrap(~len_group, ncol = 2) +
-  theme(axis.text.x = element_text(angle = 45))
+apd_seqs <- filter(apd, Sequence %in% benchmark_seqs) 
+nrow(apd_seqs)
+
+in_apd_names <- benchmark_names[which(benchmark_seqs %in% apd_seqs[["Sequence"]])]
+
+filter(all_benchmark_res, !is.na(Probability) & !(source_peptide %in% in_apd_names)) %>% 
+  group_by(Software) %>% 
+  summarise(AUC = mlr3measures::auc(as.factor(target), Probability, "TRUE")) %>% 
+  ggplot(aes(x = Software, y = AUC)) +
+  geom_point()
+
