@@ -50,10 +50,6 @@ all_benchmark_res[["Decision"]][all_benchmark_res[["Software"]] %in% c("Amylogra
 all_benchmark_res <- mutate(all_benchmark_res, target = ifelse(str_detect(source_peptide, "dbAMP"), "TRUE", "FALSE")) %>% 
   left_join(len_groups, by = "source_peptide")
 
-
-
-unique(all_benchmark_res[["len_group"]])
-
 benchmark_summ <- lapply(unique(all_benchmark_res[["Software"]]), function(ith_software) {
   lapply(unique(all_benchmark_res[["len_group"]]), function(ith_length) {
     ith_dat <- filter(all_benchmark_res, Software == ith_software,
@@ -92,12 +88,13 @@ benchmark_summ <- lapply(unique(all_benchmark_res[["Software"]]), function(ith_s
 }) %>% bind_rows()
 
 
-ggplot(benchmark_summ, aes(x = Software, y = AUC)) +
+pivot_longer(benchmark_summ, c(AUC, MCC, recall, precision, 
+                               sensitivity, specificity)) %>% 
+  mutate(AmpGram = Software == "AmpGram_full") %>% 
+  ggplot(aes(x = Software, y = value, color = AmpGram)) +
   geom_point() +
-  facet_wrap(~ len_group) +
-  theme(axis.text.x = element_text(angle = 45))
-
-
+  facet_grid(len_group ~ name, scales = "free_y") +
+  theme(axis.text.x = element_text(angle = 90))
 
 # AUC without len groups
 filter(all_benchmark_res, !is.na(Probability)) %>% 
