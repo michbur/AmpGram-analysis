@@ -56,13 +56,12 @@ benchmark_summ <- lapply(unique(all_benchmark_res[["Software"]]), function(ith_s
                       len_group == ith_length) %>% 
       mutate(target = as.factor(target),
              Decision = as.factor(Decision))
-    # For softwares without probabilities AUC is calculated with hmeasure using decision.
-    # For AVPred in two largest len groups scores were switched by hmeasure, so the result is subtracted from one
-    ith_res <- if(ith_software == "AVPred" & ith_length %in% unique(all_benchmark_res[["len_group"]])[4:5]) {
-      data.frame(AUC = 1 - HMeasure(ith_dat[["target"]], as.logical(ith_dat[["Decision"]]))[["metrics"]][["AUC"]],
-                 prob = FALSE)
-    } else if(all(is.na(ith_dat[["Probability"]]))) {
-      data.frame(AUC = HMeasure(ith_dat[["target"]], as.logical(ith_dat[["Decision"]]))[["metrics"]][["AUC"]],
+    ith_res <- if(all(is.na(ith_dat[["Probability"]]))) {
+      # For softwares without probabilities AUC is calculated with hmeasure using decision.
+      data.frame(AUC = tryCatch(HMeasure(ith_dat[["target"]], as.logical(ith_dat[["Decision"]]))[["metrics"]][["AUC"]], 
+                                warning = function(w) {
+                                  return(1 - HMeasure(ith_dat[["target"]], as.logical(ith_dat[["Decision"]]))[["metrics"]][["AUC"]])
+                                  }),
                  prob = FALSE)
       # For softwares with probabilities AUC is calculated with mlr3measures using probabilities
     } else {
