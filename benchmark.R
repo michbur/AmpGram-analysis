@@ -51,9 +51,10 @@ all_benchmark_res <- mutate(all_benchmark_res, target = ifelse(str_detect(source
   left_join(len_groups, by = "source_peptide")
 
 benchmark_summ <- lapply(unique(all_benchmark_res[["Software"]]), function(ith_software) {
-  lapply(unique(all_benchmark_res[["len_group"]]), function(ith_length) {
+  lapply(c(as.list(unique(all_benchmark_res[["len_group"]])), 
+              list(unique(all_benchmark_res[["len_group"]]))), function(ith_length) {
     ith_dat <- filter(all_benchmark_res, Software == ith_software,
-                      len_group == ith_length) %>% 
+                      len_group %in% ith_length) %>% 
       mutate(target = as.factor(target),
              Decision = as.factor(Decision))
     ith_res <- if(all(is.na(ith_dat[["Probability"]]))) {
@@ -74,7 +75,6 @@ benchmark_summ <- lapply(unique(all_benchmark_res[["Software"]]), function(ith_s
              Software = ith_software,
              len_group = ith_length,
              MCC = mlr3measures::mcc(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
-             recall = mlr3measures::recall(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
              precision = mlr3measures::precision(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
              sensitivity = mlr3measures::sensitivity(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
              specificity = mlr3measures::specificity(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"))
