@@ -17,7 +17,7 @@ benchmark_mer_preds <- mutate(benchmark_mer_df,
                               target = ifelse(str_detect(mer_id, "dbAMP"), "TRUE", "FALSE")) 
 
 benchmark_stats <- calculate_statistics(benchmark_mer_preds) %>% 
-  mutate(len_group = cut(n_peptide + 9, breaks = c(0, 20, 50, 100, 200, 800),
+  mutate(len_group = cut(n_peptide + 9, breaks = c(11, 19, 26, 36, 60, 710),
                          include.lowest = TRUE))
 
 
@@ -90,6 +90,7 @@ benchmark_summ <- lapply(unique(all_benchmark_res[["Software"]]), function(ith_s
 pivot_longer(benchmark_summ, c(AUC, MCC, recall, precision, 
                                sensitivity, specificity)) %>% 
   mutate(AmpGram = Software == "AmpGram_full") %>% 
+  filter(Software != "Amylogram") %>% 
   ggplot(aes(x = Software, y = value, color = AmpGram)) +
   geom_point() +
   facet_grid(len_group ~ name, scales = "free_y") +
