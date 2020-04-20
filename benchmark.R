@@ -73,7 +73,7 @@ benchmark_summ <- lapply(unique(all_benchmark_res[["Software"]]), function(ith_s
     if(length(levels(ith_dat[["Decision"]])) == 2) {
       mutate(ith_res,
              Software = ith_software,
-             len_group = ith_length,
+             len_group = ifelse(length(ith_length) > 1, "all", as.character(ith_length)),
              MCC = mlr3measures::mcc(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
              precision = mlr3measures::precision(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
              sensitivity = mlr3measures::sensitivity(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
@@ -81,13 +81,13 @@ benchmark_summ <- lapply(unique(all_benchmark_res[["Software"]]), function(ith_s
     } else {
       mutate(ith_res,
              Software = ith_software,
-             len_group = ith_length)
+             len_group = ifelse(length(ith_length) > 1, "all", as.character(ith_length))) 
     }
   }) %>% bind_rows()
 }) %>% bind_rows()
 
 
-pivot_longer(benchmark_summ, c(AUC, MCC, recall, precision, 
+pivot_longer(benchmark_summ, c(AUC, MCC, precision, 
                                sensitivity, specificity)) %>% 
   mutate(AmpGram = Software == "AmpGram_full") %>% 
   filter(Software != "Amylogram") %>% 
