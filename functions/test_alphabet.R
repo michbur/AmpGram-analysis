@@ -9,7 +9,11 @@ count_longest <- function(x) {
 }
 
 calculate_statistics <- function(pred_mers) {
-  group_by(pred_mers, source_peptide, target) %>% 
+  (if("fold" %in% colnames(pred_mers)) {
+    group_by(pred_mers, source_peptide, target, fold)
+  } else {  
+    group_by(pred_mers, source_peptide, target)
+  }) %>% 
     summarise(fraction_true = mean(pred > 0.5),
               pred_mean = mean(pred),
               pred_median = median(pred),
@@ -47,11 +51,9 @@ test_alphabet <- function(alphabet_file) {
   lapply(1L:length(learner_groups), function(i) {
     stats <- dat[learner_groups[[i]],] %>% 
       calculate_statistics() 
-    folded <- cvFolds(nrow(stats), K = 5)
-    fold_df <- mutate(stats, fold = folded[["which"]])
     lapply(1L:5, function(ith_fold) {
-      test_dat <- filter(fold_df, fold == ith_fold)
-      trained_model <- train_model_peptides(filter(fold_df, fold != ith_fold))
+      test_dat <- filter(stats, fold == ith_fold)
+      trained_model <- train_model_peptides(filter(stats, fold != ith_fold))
       preds <- mutate(test_dat,
                       pred = predict(trained_model, 
                                      data.frame(test_dat))[["predictions"]][, "TRUE"],
