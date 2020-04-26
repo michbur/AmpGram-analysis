@@ -63,3 +63,9 @@ test_alphabet <- function(alphabet_file) {
   }) %>% bind_rows()
 }
 
+
+test_all_alphabets <- function(data_path, alphabets) {
+  lapply(alphabets, function(ith_alphabet) {
+    test_alphabet(paste0(data_path, "results/", ith_alphabet, ".csv"))
+  }) %>% bind_rows()
+}

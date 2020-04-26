@@ -25,6 +25,7 @@ source("./functions/get_mers.R")
 source("./functions/count_ampgrams.R")
 source("./functions/do_cv.R")
 source("./functions/degenerate_ngrams.R")
+source("./functions/test_alphabet.R")
 
 analysis_AmpGram <- drake_plan(raw_data = read_raw_data(),
                                nonstandard_AMPs = analyze_nonstandard_AMPs(raw_data),
@@ -52,7 +53,8 @@ analysis_AmpGram <- drake_plan(raw_data = read_raw_data(),
                                binary_ngrams = cbind(ngrams12, ngrams3_1, ngrams3_2),
                                cv_raw = do_cv(mer_df, binary_ngrams),
                                alphabets = create_alphabets(),
-                               cv_degenerate = do_cv_degenerate(mer_df, binary_ngrams, alphabets))
+                               cv_degenerate = do_cv_degenerate(mer_df, binary_ngrams, alphabets),
+                               all_alphabets_preds = test_all_alphabets(data_path, alphabets))
 
 make(analysis_AmpGram, seed = 990, jobs = 8)
 
