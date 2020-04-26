@@ -66,6 +66,15 @@ test_alphabet <- function(alphabet_file) {
 
 test_all_alphabets <- function(data_path, alphabets) {
   lapply(alphabets, function(ith_alphabet) {
-    test_alphabet(paste0(data_path, "results/", ith_alphabet, ".csv"))
+    alph_dat <- test_alphabet(paste0(data_path, "results/", ith_alphabet, ".csv"))
+    lapply(unique(single_alph[["train_group"]]), function(ith_train_group) {
+      train_group_dat <- filter(alph_dat, train_group == ith_train_group)
+      HMeasure(train_group_dat[["target"]], train_group_dat[["pred"]])[["metrics"]] %>% 
+        mutate(alphabet = unique(train_group_dat[["alphabet"]]),
+               train_group = ith_train_group)
+    }) %>% bind_rows()
   }) %>% bind_rows()
 }
+
+tmp <- test_alphabet(paste0(data_path, "results/ac_de_wy_gpst_hknqr_filmv.csv")) 
+
