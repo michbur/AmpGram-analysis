@@ -54,7 +54,8 @@ analysis_AmpGram <- drake_plan(raw_data = read_raw_data(),
                                cv_raw = do_cv(mer_df, binary_ngrams),
                                alphabets = create_alphabets(),
                                cv_degenerate = do_cv_degenerate(mer_df, binary_ngrams, alphabets),
-                               all_alphabets_preds = test_all_alphabets(data_path, alphabets))
+                               all_alphabets_preds = test_all_alphabets(data_path, alphabets),
+                               measures_alphabets = calc_measures_alphabets(all_alphabets_preds))
 
 make(analysis_AmpGram, seed = 990, jobs = 8)
 

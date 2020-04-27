@@ -66,15 +66,25 @@ test_alphabet <- function(alphabet_file) {
 
 test_all_alphabets <- function(data_path, alphabets) {
   lapply(alphabets, function(ith_alphabet) {
-    alph_dat <- test_alphabet(paste0(data_path, "results/", ith_alphabet, ".csv"))
-    lapply(unique(single_alph[["train_group"]]), function(ith_train_group) {
-      train_group_dat <- filter(alph_dat, train_group == ith_train_group)
-      HMeasure(train_group_dat[["target"]], train_group_dat[["pred"]])[["metrics"]] %>% 
-        mutate(alphabet = unique(train_group_dat[["alphabet"]]),
-               train_group = ith_train_group)
-    }) %>% bind_rows()
+    test_alphabet(paste0(data_path, "results/", ith_alphabet, ".csv"))
   }) %>% bind_rows()
 }
 
-tmp <- test_alphabet(paste0(data_path, "results/ac_de_wy_gpst_hknqr_filmv.csv")) 
-
+calc_measures_alphabets <- function(alphabets_preds) {
+  lapply(unique(alphabets_preds[["alphabet"]]), function(ith_alphabet) {
+    lapply(unique(alphabets_preds[["train_group"]]), function(ith_train_group) {
+      lapply(unique(alphabets_preds[["fold"]]), function(ith_fold) {
+        dat <- filter(alphabets_preds, fold == ith_fold & train_group == ith_train_group & alphabet == ith_alphabet) %>% 
+          mutate(decision = as.factor(ifelse(pred >= 0.5, "TRUE", "FALSE")))
+        data.frame(alphabet = ith_alphabet,
+                   train_group = ith_train_group,
+                   fold = ith_fold,
+                   AUC = mlr3measures::auc(dat[["target"]], dat[["pred"]], "TRUE"),
+                   MCC = mlr3measures::mcc(dat[["target"]], dat[["decision"]], "TRUE"),
+                   precision = mlr3measures::precision(dat[["target"]], dat[["decision"]], "TRUE"),
+                   sensitivity = mlr3measures::sensitivity(dat[["target"]], dat[["decision"]], "TRUE"),
+                   specificity = mlr3measures::specificity(dat[["target"]], dat[["decision"]], "TRUE"))
+      }) %>% bind_rows()
+    }) %>% bind_rows()
+  }) %>% bind_rows()
+}
