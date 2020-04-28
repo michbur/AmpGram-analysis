@@ -8,7 +8,7 @@ sorted <- measures_alphabets %>%
             mean_sens = mean(sensitivity),
             mean_spec = mean(specificity)) %>% 
   arrange(desc(mean_AUC))
-
+#slice(1L:10)
 best <- filter(measures_alphabets, alphabet %in% sorted[["alphabet"]][1:10]) %>% 
   mutate(alphabet = factor(alphabet, levels = sorted[["alphabet"]][1:10]),
          train_group = factor(train_group, levels = c("[11,19]_(19,26]", "[11,19]", "(19,26]")))
