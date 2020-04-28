@@ -71,19 +71,26 @@ test_all_alphabets <- function(data_path, alphabets) {
 }
 
 calc_measures_alphabets <- function(alphabets_preds) {
+  alphabets_preds <- mutate(alphabets_preds, 
+                            len_group = cut(n_peptide + 9, breaks = c(11, 19, 26, 36, 60, 710),
+                                            include.lowest = TRUE))
   lapply(unique(alphabets_preds[["alphabet"]]), function(ith_alphabet) {
     lapply(unique(alphabets_preds[["train_group"]]), function(ith_train_group) {
       lapply(unique(alphabets_preds[["fold"]]), function(ith_fold) {
-        dat <- filter(alphabets_preds, fold == ith_fold & train_group == ith_train_group & alphabet == ith_alphabet) %>% 
-          mutate(decision = as.factor(ifelse(pred >= 0.5, "TRUE", "FALSE")))
-        data.frame(alphabet = ith_alphabet,
-                   train_group = ith_train_group,
-                   fold = ith_fold,
-                   AUC = mlr3measures::auc(dat[["target"]], dat[["pred"]], "TRUE"),
-                   MCC = mlr3measures::mcc(dat[["target"]], dat[["decision"]], "TRUE"),
-                   precision = mlr3measures::precision(dat[["target"]], dat[["decision"]], "TRUE"),
-                   sensitivity = mlr3measures::sensitivity(dat[["target"]], dat[["decision"]], "TRUE"),
-                   specificity = mlr3measures::specificity(dat[["target"]], dat[["decision"]], "TRUE"))
+        lapply(unique(alphabets_preds[["len_group"]]), function(ith_group) {
+          dat <- filter(alphabets_preds, fold == ith_fold & train_group == ith_train_group & alphabet == ith_alphabet & 
+                          len_group == ith_group) %>% 
+            mutate(decision = as.factor(ifelse(pred >= 0.5, "TRUE", "FALSE")))
+          data.frame(alphabet = ith_alphabet,
+                     train_group = ith_train_group,
+                     fold = ith_fold,
+                     len_group = ith_group,
+                     AUC = mlr3measures::auc(dat[["target"]], dat[["pred"]], "TRUE"),
+                     MCC = mlr3measures::mcc(dat[["target"]], dat[["decision"]], "TRUE"),
+                     precision = mlr3measures::precision(dat[["target"]], dat[["decision"]], "TRUE"),
+                     sensitivity = mlr3measures::sensitivity(dat[["target"]], dat[["decision"]], "TRUE"),
+                     specificity = mlr3measures::specificity(dat[["target"]], dat[["decision"]], "TRUE"))
+        }) %>% bind_rows()
       }) %>% bind_rows()
     }) %>% bind_rows()
   }) %>% bind_rows()
