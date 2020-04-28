@@ -4,6 +4,7 @@ library(ranger)
 library(biogram)
 library(ggplot2)
 library(tidyr)
+library(pbapply)
 requireNamespace("mlr3measures")
 
 load("./data/benchmark_data.RData")
@@ -126,15 +127,15 @@ filter(all_benchmark_res, !is.na(Probability) & !(source_peptide %in% in_apd_nam
 
 ### Benchmark on WS Noble's datasets
 
-dataset_to_mer_df <- function(dataset, prefix) {
-  seqs <- lapply(dataset[["Peptide.sequence"]], function(ith_seq) {
-    strsplit(ith_seq, "")[[1]]
-  })
-  names(seqs) <- paste0(prefix, sprintf('%0.5d', 1:nrow(dataset)))
-  seqs %>% 
-    list2matrix() %>% 
-    create_mer_df()
-}
+# dataset_to_mer_df <- function(dataset, prefix) {
+#   seqs <- lapply(dataset[["Peptide.sequence"]], function(ith_seq) {
+#     strsplit(ith_seq, "")[[1]]
+#   })
+#   names(seqs) <- paste0(prefix, sprintf('%0.5d', 1:nrow(dataset)))
+#   seqs %>% 
+#     list2matrix() %>% 
+#     create_mer_df()
+# }
 
 preprocess_dataset <- function(dat, prefix) {
   mutate(dat,
@@ -148,23 +149,57 @@ preprocess_dataset <- function(dat, prefix) {
                                         Bacteriocin.label == -1 ~ "FALSE"))
 }
 
+count_imp_ampgrams <- function(mer_df, imp_ampgrams) {
+  mer_df[, grep("^X", colnames(mer_df))] %>% 
+    as.matrix() %>% 
+    count_specified(imp_ampgrams) %>% 
+    binarize
+}
+
+get_single_seq_mers <- function(seq) {
+      seq2ngrams(seq, 10, a()[-1]) %>% 
+        decode_ngrams() %>% 
+        unname() %>% 
+        strsplit(split = "") %>% 
+        do.call(rbind, .) 
+}
+
+
 dampd <- read.delim("./data/SuppTable1.tsv", stringsAsFactors = FALSE)
 apd <- read.delim("./data/SuppTable2.tsv", stringsAsFactors = FALSE)
 
 both_datasets <- bind_rows(preprocess_dataset(dampd, "DAMPD"),
                            preprocess_dataset(apd, "APD"))
 
-both_datasets_mers <- bind_rows(dataset_to_mer_df(dampd, "DAMPD"), 
-                           dataset_to_mer_df(apd, "APD")) %>% 
-  left_join(both_datasets[, c("source_peptide", "AMP_target", "Antibacterial_target", "Bacteriocin_target")],
-            by = "source_peptide")
+# both_datasets_mers <- bind_rows(dataset_to_mer_df(dampd, "DAMPD"), 
+#                            dataset_to_mer_df(apd, "APD")) %>% 
+#   left_join(both_datasets[, c("source_peptide", "AMP_target", "Antibacterial_target", "Bacteriocin_target")],
+#             by = "source_peptide")
 
-datasets_ngrams <- count_ampgrams(both_datasets_mers,
-                                  ns = c(1, rep(2, 4), rep(3, 4)),
-                                  ds = list(0, 0, 1, 2, 3, c(0, 0), c(0, 1), c(1, 0), c(1, 1)))
+# Selecting only AMP datasets
+datasets_amp_only <- filter(both_datasets, !is.na(AMP_target))
+datasets_mer_preds <- pblapply(datasets_amp_only[["source_peptide"]], cl = 8, function(ith_peptide) {
+  seq <- filter(datasets_amp_only, source_peptide == ith_peptide)[["Peptide.sequence"]]
+  target <- filter(datasets_amp_only, source_peptide == ith_peptide)[["AMP_target"]]
+  mers <- strsplit(seq, "")[[1]] %>% 
+    matrix(nrow = 1) %>% 
+    get_single_seq_mers() %>% 
+    data.frame(stringsAsFactors = FALSE) %>% 
+    mutate(source_peptide = ith_peptide,
+           mer_id = paste0(source_peptide, "m", 1L:nrow(.)),
+           target = target)
+  counted_imp_ngrams <- count_imp_ampgrams(mers, imp_bigrams)
+  res <- mutate(mers, 
+         pred = predict(model_mers_full_alphabet, as.matrix(counted_imp_ngrams))[["predictions"]][,"TRUE"])
+}) %>% 
+  bind_rows()
 
-datasets_mer_preds <- mutate(both_datasets_mers,
-                              pred = predict(model_mers_full_alphabet, 
-                                             data.frame(as.matrix(datasets_ngrams[, which(datasets_ngrams[["dimnames"]][[2]] %in% imp_bigrams)])))[["predictions"]][, "TRUE"]) 
+datasets_stats <- calculate_statistics(datasets_mer_preds) 
 
-save(list = c("datasets_ngrams", "datasets_mer_preds"), file = "./results/nobles_datasets_benchmark.RData")
+datasets_peptide_preds <- mutate(datasets_stats,
+                                  Probability = predict(model_peptides_full_alphabet, 
+                                                        datasets_stats[, 3:16])[["predictions"]][, "TRUE"],
+                                  Decision = ifelse(Probability >= 0.5, TRUE, FALSE),
+                                  Software = "AmpGram_full") 
+
+saveRDS(datasets_peptide_preds, file = "datasets_peptide_preds.rds")
