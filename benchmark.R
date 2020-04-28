@@ -10,6 +10,7 @@ requireNamespace("mlr3measures")
 load("./data/benchmark_data.RData")
 source("./functions/do_cv.R")
 source("./functions/benchmark_functions.R")
+source("./functions/test_alphabet.R")
 
 # AmpGram full alphabet
 full_benchmark_mer_preds <- mutate(benchmark_mer_df,
