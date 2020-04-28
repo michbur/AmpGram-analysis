@@ -8,35 +8,45 @@ library(pbapply)
 requireNamespace("mlr3measures")
 
 load("./data/benchmark_data.RData")
-source("./generate_benchmark_data.R")
+source("./functions/do_cv.R")
+source("./functions/benchmark_functions.R")
 
-sort_group <- function(x) {
-  splitted_x <- sapply(strsplit(x, split = ","), function(i) i[1])
-  x_order <- order(as.numeric(gsub(pattern = "[^0-9]", 
-                                   replacement = "", x = splitted_x)),
-                   na.last = FALSE)
-  x[x_order]
-}
-
-
-benchmark_mer_preds <- mutate(benchmark_mer_df,
-                              pred = predict(model_mers_full_alphabet, 
-                                             data.frame(as.matrix(benchmark_ngrams[, which(benchmark_ngrams[["dimnames"]][[2]] %in% imp_bigrams)])))[["predictions"]][, "TRUE"],
+# AmpGram full alphabet
+full_benchmark_mer_preds <- mutate(benchmark_mer_df,
+                              pred = predict(full_model_mers, 
+                                             data.frame(as.matrix(benchmark_ngrams)))[["predictions"]][, "TRUE"],
                               target = ifelse(grepl("dbAMP", mer_id), "TRUE", "FALSE")) 
 
-benchmark_stats <- calculate_statistics(benchmark_mer_preds) %>% 
+full_benchmark_stats <- calculate_statistics(full_benchmark_mer_preds) %>% 
   mutate(len_group = cut(n_peptide + 9, breaks = c(11, 19, 26, 36, 60, 710),
                          include.lowest = TRUE))
 
-benchmark_peptide_preds <- mutate(benchmark_stats[, c(1:2,17)],
-                                  Probability = predict(model_peptides_full_alphabet, 
-                                                        benchmark_stats[, 3:16])[["predictions"]][, "TRUE"],
+full_benchmark_peptide_preds <- mutate(full_benchmark_stats[, c(1:2,17)],
+                                  Probability = predict(full_model_peptides, 
+                                                        full_benchmark_stats[, 3:16])[["predictions"]][, "TRUE"],
                                   Decision = ifelse(Probability >= 0.5, TRUE, FALSE),
                                   Software = "AmpGram_full") 
 #HMeasure(benchmark_peptide_preds[["target"]], benchmark_peptide_preds[["Probability"]])[["metrics"]]
 
+# AmpGram simplified alphabet
+deg_benchmark_ngrams <- degenerate_ngrams(benchmark_ngrams, string2list("c_de_gw_hkr_afilmv_npqsty"), binarize = TRUE)
+deg_benchmark_mer_preds <- mutate(benchmark_mer_df,
+                                   pred = predict(deg_model_mers, 
+                                                  data.frame(as.matrix(deg_benchmark_ngrams[, deg_imp_ngrams])))[["predictions"]][, "TRUE"],
+                                   target = ifelse(grepl("dbAMP", mer_id), "TRUE", "FALSE")) 
 
-len_groups <- select(benchmark_stats, c("source_peptide", "len_group"))
+deg_benchmark_stats <- calculate_statistics(deg_benchmark_mer_preds) %>% 
+  mutate(len_group = cut(n_peptide + 9, breaks = c(11, 19, 26, 36, 60, 710),
+                         include.lowest = TRUE))
+
+deg_benchmark_peptide_preds <- mutate(deg_benchmark_stats[, c(1:2,17)],
+                                       Probability = predict(deg_model_peptides, 
+                                                             deg_benchmark_stats[, 3:16])[["predictions"]][, "TRUE"],
+                                       Decision = ifelse(Probability >= 0.5, TRUE, FALSE),
+                                       Software = "AmpGram_simplified") 
+
+
+len_groups <- select(full_benchmark_stats, c("source_peptide", "len_group"))
 
 iAMPpred <- read.delim("./data/iAMPpred_benchmark.csv")[,-1] %>% 
   setNames(c("source_peptide", "iAMPpred_antibact", "iAMPpred_antivir", "iAMPpred_antifung")) %>% 
@@ -44,7 +54,7 @@ iAMPpred <- read.delim("./data/iAMPpred_benchmark.csv")[,-1] %>%
 
 all_benchmark_res <- read.csv("./data/benchmark_all.csv") %>% 
   setNames(c("Software", "source_peptide", "Decision", "Probability")) %>% 
-  bind_rows(benchmark_peptide_preds[, c(1,4:6)]) %>% 
+  bind_rows(full_benchmark_peptide_preds[, c(1,4:6)]) %>% 
   bind_rows(iAMPpred) %>% 
   filter(Software != "Amylogram") %>% 
   mutate(source_peptide = gsub("DBAMP", "dbAMP_", source_peptide),
@@ -127,54 +137,12 @@ filter(all_benchmark_res, !is.na(Probability) & !(source_peptide %in% in_apd_nam
 
 ### Benchmark on WS Noble's datasets
 
-# dataset_to_mer_df <- function(dataset, prefix) {
-#   seqs <- lapply(dataset[["Peptide.sequence"]], function(ith_seq) {
-#     strsplit(ith_seq, "")[[1]]
-#   })
-#   names(seqs) <- paste0(prefix, sprintf('%0.5d', 1:nrow(dataset)))
-#   seqs %>% 
-#     list2matrix() %>% 
-#     create_mer_df()
-# }
-
-preprocess_dataset <- function(dat, prefix) {
-  mutate(dat,
-         dataset = prefix,
-         source_peptide = paste0(prefix,  sprintf('%0.5d', 1:nrow(dat))),
-         AMP_target = case_when(AMP.label == 1 ~ "TRUE",
-                                AMP.label == -1 ~ "FALSE"),
-         Antibacterial_target = case_when(Antibacterial.label == 1 ~ "TRUE",
-                                          Antibacterial.label == -1 ~ "FALSE"),
-         Bacteriocin_target = case_when(Bacteriocin.label == 1 ~ "TRUE",
-                                        Bacteriocin.label == -1 ~ "FALSE"))
-}
-
-count_imp_ampgrams <- function(mer_df, imp_ampgrams) {
-  mer_df[, grep("^X", colnames(mer_df))] %>% 
-    as.matrix() %>% 
-    count_specified(imp_ampgrams) %>% 
-    binarize
-}
-
-get_single_seq_mers <- function(seq) {
-      seq2ngrams(seq, 10, a()[-1]) %>% 
-        decode_ngrams() %>% 
-        unname() %>% 
-        strsplit(split = "") %>% 
-        do.call(rbind, .) 
-}
-
 
 dampd <- read.delim("./data/SuppTable1.tsv", stringsAsFactors = FALSE)
 apd <- read.delim("./data/SuppTable2.tsv", stringsAsFactors = FALSE)
 
 both_datasets <- bind_rows(preprocess_dataset(dampd, "DAMPD"),
                            preprocess_dataset(apd, "APD"))
-
-# both_datasets_mers <- bind_rows(dataset_to_mer_df(dampd, "DAMPD"), 
-#                            dataset_to_mer_df(apd, "APD")) %>% 
-#   left_join(both_datasets[, c("source_peptide", "AMP_target", "Antibacterial_target", "Bacteriocin_target")],
-#             by = "source_peptide")
 
 # Selecting only AMP datasets
 datasets_amp_only <- filter(both_datasets, !is.na(AMP_target))
