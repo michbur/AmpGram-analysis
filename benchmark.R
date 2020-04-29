@@ -13,6 +13,12 @@ source("./functions/do_cv.R")
 source("./functions/benchmark_functions.R")
 source("./functions/test_alphabet.R")
 
+if(Sys.info()[["nodename"]] %in% c("amyloid", "phobos", "huawei")) {
+  data_path <- "/home/michal/Dropbox/AMP-analysis/AmpGram-analysis/"
+}
+if(Sys.info()[["nodename"]] %in% c("kasia-MACH-WX9", "ryzen")) {
+  data_path <- "/home/kasia/Dropbox/AmpGram-analysis/"
+}
 
 
 benchmark_AmpGram <- drake_plan(full_benchmark_mer_preds = mutate(benchmark_mer_df,
