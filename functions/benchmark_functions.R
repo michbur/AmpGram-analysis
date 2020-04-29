@@ -121,9 +121,9 @@ preprocess_Nobles_datasets <- function() {
 }
 
 predict_Nobles_datasets <- function(datasets, model_mers, imp_ngrams, model_peptides) {
-  datasets_mer_preds <- pblapply(datasets_amp_only[["source_peptide"]], cl = 8, function(ith_peptide) {
-    seq <- filter(datasets_amp_only, source_peptide == ith_peptide)[["Peptide.sequence"]]
-    target <- filter(datasets_amp_only, source_peptide == ith_peptide)[["AMP_target"]]
+  datasets_mer_preds <- pblapply(datasets[["source_peptide"]], cl = 16, function(ith_peptide) {
+    seq <- filter(datasets, source_peptide == ith_peptide)[["Peptide.sequence"]]
+    target <- filter(datasets, source_peptide == ith_peptide)[["AMP_target"]]
     mers <- strsplit(seq, "")[[1]] %>% 
       matrix(nrow = 1) %>% 
       get_single_seq_mers() %>% 
@@ -133,9 +133,9 @@ predict_Nobles_datasets <- function(datasets, model_mers, imp_ngrams, model_pept
              target = target)
     counted_imp_ngrams <- count_imp_ampgrams(mers, imp_ngrams)
     res <- mutate(mers, 
-                  pred = predict(model_mers, as.matrix(counted_imp_ngrams))[["predictions"]][,"TRUE"])
-  }) %>% 
-    bind_rows()
+           pred = predict(model_mers, as.matrix(counted_imp_ngrams))[["predictions"]][,"TRUE"])
+    res
+  }) %>% bind_rows()
   
   datasets_stats <- calculate_statistics(datasets_mer_preds) 
   
@@ -143,5 +143,5 @@ predict_Nobles_datasets <- function(datasets, model_mers, imp_ngrams, model_pept
                                    Probability = predict(model_peptides, 
                                                          datasets_stats[, 3:16])[["predictions"]][, "TRUE"],
                                    Decision = ifelse(Probability >= 0.5, TRUE, FALSE),
-                                   Software = "AmpGram_full") 
+                                   Software = "AmpGram_full")
 }
