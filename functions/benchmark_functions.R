@@ -76,6 +76,8 @@ preprocess_benchmark_data <- function(full_benchmark_peptide_preds, len_groups) 
     left_join(len_groups, by = "source_peptide")
 }
 
+
+
 calculate_benchmark_summary <- function(all_benchmark_res) {
   lapply(unique(all_benchmark_res[["Software"]]), function(ith_software) {
     lapply(c(as.list(unique(all_benchmark_res[["len_group"]])), 
@@ -117,31 +119,7 @@ preprocess_Nobles_datasets <- function() {
   apd <- read.delim("./data/SuppTable2.tsv", stringsAsFactors = FALSE)
   both_datasets <- bind_rows(preprocess_dataset(dampd, "DAMPD"),
                              preprocess_dataset(apd, "APD"))
-  filter(both_datasets, !is.na(AMP_target))
-}
-
-predict_Nobles_datasets <- function(datasets, model_mers, imp_ngrams, model_peptides) {
-  datasets_mer_preds <- pblapply(datasets[["source_peptide"]], cl = 16, function(ith_peptide) {
-    seq <- filter(datasets, source_peptide == ith_peptide)[["Peptide.sequence"]]
-    target <- filter(datasets, source_peptide == ith_peptide)[["AMP_target"]]
-    mers <- strsplit(seq, "")[[1]] %>% 
-      matrix(nrow = 1) %>% 
-      get_single_seq_mers() %>% 
-      data.frame(stringsAsFactors = FALSE) %>% 
-      mutate(source_peptide = ith_peptide,
-             mer_id = paste0(source_peptide, "m", 1L:nrow(.)),
-             target = target)
-    counted_imp_ngrams <- count_imp_ampgrams(mers, imp_ngrams)
-    res <- mutate(mers, 
-           pred = predict(model_mers, as.matrix(counted_imp_ngrams))[["predictions"]][,"TRUE"])
-    res
-  }) %>% bind_rows()
   
-  datasets_stats <- calculate_statistics(datasets_mer_preds) 
-  
-  datasets_peptide_preds <- mutate(datasets_stats,
-                                   Probability = predict(model_peptides, 
-                                                         datasets_stats[, 3:16])[["predictions"]][, "TRUE"],
-                                   Decision = ifelse(Probability >= 0.5, TRUE, FALSE),
-                                   Software = "AmpGram_full")
+  amp_only <- filter(both_datasets, !is.na(AMP_target))
+  amp_only
 }

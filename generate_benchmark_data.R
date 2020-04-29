@@ -45,9 +45,27 @@ save(list = c("imp_bigrams", "full_model_mers", "full_model_peptides", "deg_bina
 
 # Benchmark on WS Noble's datasets
 load("./data/benchmark_data.RData")
-Nobles_benchmark_datasets <- preprocess_Nobles_datasets()
-Nobles_datasets_preds <- predict_Nobles_datasets(Nobles_benchmark_datasets,
-                                                full_model_mers,
-                                                imp_bigrams,
-                                                full_model_peptides)
-saveRDS(Nobles_datasets_preds, file = "Nobles_datasets_benchmark_res.rds")
+Nobles_datasets <- preprocess_Nobles_datasets()
+Nobles_datasets_mer_preds <- pblapply(Nobles_datasets[["source_peptide"]], cl = 16, function(ith_peptide) {
+  seq <- filter(Nobles_datasets, source_peptide == ith_peptide)[["Peptide.sequence"]]
+  target <- filter(Nobles_datasets, source_peptide == ith_peptide)[["AMP_target"]]
+  mers <- strsplit(seq, "")[[1]] %>% 
+    matrix(nrow = 1) %>% 
+    get_single_seq_mers() %>% 
+    data.frame(stringsAsFactors = FALSE) %>% 
+    mutate(source_peptide = ith_peptide,
+           mer_id = paste0(source_peptide, "m", 1L:nrow(.)),
+           target = target)
+  counted_imp_ngrams <- count_imp_ampgrams(mers, imp_bigrams)
+  res <- mutate(mers, 
+                pred = predict(full_model_mers, as.matrix(counted_imp_ngrams))[["predictions"]][,"TRUE"])
+}) %>% bind_rows()
+
+Nobles_datasets_stats <- calculate_statistics(Nobles_datasets_mer_preds) 
+
+Nobles_datasets_peptide_preds <- mutate(Nobles_datasets_stats,
+                                        Probability = predict(full_model_peptides, 
+                                                              Nobles_datasets_stats[, 3:16])[["predictions"]][, "TRUE"],
+                                        Decision = ifelse(Probability >= 0.5, TRUE, FALSE),
+                                        Software = "AmpGram_full")
+saveRDS(Nobles_datasets_peptide_preds, file = "Nobles_datasets_benchmark_res.rds")
