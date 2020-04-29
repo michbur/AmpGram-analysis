@@ -1,8 +1,8 @@
-calc_imp_bigrams <- function(train_mer_df, train_binary_ngrams, train_groups) {
+calc_imp_bigrams <- function(train_mer_df, train_binary_ngrams, train_groups, cutoff = 0.05) {
   train_dat <- filter(train_mer_df, group %in% train_groups)
   test_bis <- test_features(train_dat[["target"]],
                             train_binary_ngrams[train_mer_df[["group"]] %in% train_groups, ])
-  imp_bigrams <- cut(test_bis, breaks = c(0, 0.05, 1))[[1]]
+  imp_bigrams <- cut(test_bis, breaks = c(0, cutoff, 1))[[1]]
   imp_bigrams
 }
 
@@ -56,8 +56,8 @@ get_single_seq_mers <- function(seq) {
 
 preprocess_benchmark_data <- function(full_benchmark_peptide_preds, len_groups) {
   iAMPpred <- read.delim("./data/iAMPpred_benchmark.csv")[,-1] %>% 
-    setNames(c("source_peptide", "iAMPpred_antibact", "iAMPpred_antivir", "iAMPpred_antifung")) %>% 
-    pivot_longer(c("iAMPpred_antibact", "iAMPpred_antibact", "iAMPpred_antifung"), names_to = "Software", values_to = "Probability")
+    setNames(c("source_peptide", "iAMPpred_antibacterial", "iAMPpred_antiviral", "iAMPpred_antifungal")) %>% 
+    pivot_longer(c("iAMPpred_antibacterial", "iAMPpred_antiviral", "iAMPpred_antifungal"), names_to = "Software", values_to = "Probability")
   
   all_benchmark_res <- read.csv("./data/benchmark_all.csv") %>% 
     setNames(c("Software", "source_peptide", "Decision", "Probability")) %>% 
@@ -68,8 +68,8 @@ preprocess_benchmark_data <- function(full_benchmark_peptide_preds, len_groups) 
            source_peptide = gsub("dbAMP", "dbAMP_", source_peptide),
            source_peptide = gsub("__", "_", source_peptide))
   
-  all_benchmark_res[["Decision"]][all_benchmark_res[["Software"]] %in% c("iAMPpred_antibact", "iAMPpred_antivir", "iAMPpred_antifung")] <- ifelse(
-    (all_benchmark_res[["Probability"]][all_benchmark_res[["Software"]] %in% c("iAMPpred_antibact", "iAMPpred_antivir", "iAMPpred_antifung")] >= 0.5), 
+  all_benchmark_res[["Decision"]][all_benchmark_res[["Software"]] %in% c("iAMPpred_antibacterial", "iAMPpred_antiviral", "iAMPpred_antifungal")] <- ifelse(
+    (all_benchmark_res[["Probability"]][all_benchmark_res[["Software"]] %in% c("iAMPpred_antibacterial", "iAMPpred_antiviral", "iAMPpred_antifungal")] >= 0.5), 
     TRUE, FALSE)
   
   all_benchmark_res <- mutate(all_benchmark_res, target = ifelse(grepl("dbAMP", source_peptide), "TRUE", "FALSE")) %>% 
@@ -103,9 +103,9 @@ calculate_benchmark_summary <- function(all_benchmark_res) {
                if(length(levels(ith_dat[["Decision"]])) == 2) {
                  mutate(ith_res,
                         MCC = mlr3measures::mcc(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
-                        precision = mlr3measures::precision(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
-                        sensitivity = mlr3measures::sensitivity(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
-                        specificity = mlr3measures::specificity(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"))
+                        Precision = mlr3measures::precision(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
+                        Sensitivity = mlr3measures::sensitivity(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"),
+                        Specificity = mlr3measures::specificity(ith_dat[["target"]], ith_dat[["Decision"]], "TRUE"))
                } %>% mutate(Software = ith_software,
                             len_group = ifelse(length(ith_length) > 1, "all", as.character(ith_length)))
              }) %>% bind_rows()

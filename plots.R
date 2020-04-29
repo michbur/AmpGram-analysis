@@ -3,6 +3,9 @@ library(ggplot2)
 library(drake)
 library(biogram)
 library(tidyr)
+source("./functions/benchmark_functions.R")
+source("./functions/test_alphabet.R")
+load("./data/benchmark_data.RData")
 
 if(Sys.info()[["nodename"]] %in% c("amyloid", "phobos", "huawei")) {
   data_path <- "/home/michal/Dropbox/AMP-analysis/AmpGram-analysis/"
@@ -26,7 +29,7 @@ get_comp_df <- function(groups, dataset, dataset_names_by_len_groups, type) {
       setNames(c("aa", "freq")) 
     mutate(aac, 
            freq = freq/sum(freq),
-           dataset = type,
+           Dataset = type,
            len_group = ith_group)
   }) %>% bind_rows()
 }
@@ -48,6 +51,45 @@ calculate_len_distribution <- function(lens) {
 }
 
 
+get_lactoferrin_amp_profile <- function() {
+  prot <- read_fasta("./data/bovine_lactoferrin.fasta")
+  mer_df <- prot[20:length(prot)] %>% 
+    unlist() %>% 
+    matrix(nrow = 1) %>% 
+    get_single_seq_mers() %>% 
+    data.frame(stringsAsFactors = FALSE) %>% 
+    mutate(source_peptide = "lactoferrin",
+           mer_id = paste0(source_peptide, "_m", 1L:nrow(.)))
+  imp_ngrams <- count_imp_ampgrams(mer_df, imp_bigrams)
+  amp_regions <- c(1:11, 17:41, 268:284)
+  pred_mers <- mutate(mer_df, 
+                      pred = predict(full_model_mers, as.matrix(imp_ngrams))[["predictions"]][,"TRUE"],
+                      pos = 1L:nrow(mer_df),
+                      region = ifelse(pos %in% amp_regions, "AMP", "non-AMP"))
+
+  detailed_preds <- do.call(rbind, lapply(unique(pred_mers[["source_peptide"]]), function(single_prot) {
+    mer_preds <- pred_mers[pred_mers[["source_peptide"]] == single_prot, "pred"]
+    pos_matrix <- do.call(cbind, get_ngrams_ind(length(mer_preds) + 9, 10, 0))
+    data.frame(
+      Protein = single_prot,
+      Pos = unique(as.vector(pos_matrix)),
+      Probability = unlist(lapply(unique(as.vector(pos_matrix)), function(i)
+        mean(mer_preds[which(pos_matrix == i, arr.ind = TRUE)[, "row"]])
+      )))
+  }))
+  
+  ggplot(detailed_preds, aes(x = Pos, y = Probability, group = Protein)) +
+    geom_ribbon(mapping = aes(xmin = 1, xmax = 11), fill = "red") +
+    geom_ribbon(mapping = aes(xmin = 17, xmax = 41), fill = "red") +
+    geom_ribbon(mapping = aes(xmin = 268, xmax = 284), fill = "red") +
+    geom_point() +
+    geom_line() +
+    geom_hline(yintercept = 0.5, color = "red") +
+    theme_bw()
+}
+
+
+
 plots_AmpGram <- drake_plan(neg = readd(negative_data),
                             pos = readd(cdhit_data),
                             pos_ids = readd(cdhit_data_ids),
@@ -55,40 +97,53 @@ plots_AmpGram <- drake_plan(neg = readd(negative_data),
                             pos_names_by_len_groups = select_names_by_len_group(pos, pos_ids),
                             neg_names_by_len_groups = select_names_by_len_group(neg, neg_ids),
                             groups = names(pos_ids),
-                            pos_comp = get_comp_df(groups, pos, pos_names_by_len_groups, "Positive"),
-                            neg_comp = get_comp_df(groups, neg, neg_names_by_len_groups, "Negative"),
+                            pos_comp = get_comp_df(groups, pos, pos_names_by_len_groups, "AMP"),
+                            neg_comp = get_comp_df(groups, neg, neg_names_by_len_groups, "Non-AMP"),
                             composition_df = bind_rows(pos_comp, neg_comp) %>% 
-                              mutate(len_group = factor(len_group, levels = sort_group(unique(len_group))),
-                                     dataset = factor(dataset, levels = c("Positive", "Negative"))),
-                            composition_plot = ggplot(composition_df, aes(x = aa, y = freq, fill = dataset)) +
+                              mutate(len_group = factor(len_group, levels = sort_group(unique(len_group)))),
+                            composition_plot = ggplot(composition_df, aes(x = aa, y = freq, fill = Dataset)) +
                               geom_col(position = "dodge") +
-                              facet_wrap(~ len_group, ncol = 2, scales = "free_x") +
+                              facet_wrap(~ len_group, ncol = 2, scales = "free_x", 
+                                         labeller = labeller(len_group = as_labeller(c("[11,19]"="11-19 aa", "(19,26]"="20-26 aa", "(26,36]"="27-36 aa", 
+                                                                                       "(36,60]"="37-60 aa", "(60,710]"="61-710 aa")))) +
                               xlab("Amino acid") +
                               ylab("Frequency") +
-                              theme_bw(),
+                              theme_bw() +
+                              scale_fill_manual(values = c("#f8766d", "#878787")),
                             UniProt_seqs = read_fasta(paste0(data_path, "data/input-seqs.fasta")),
                             UniProt_lens = lapply(1L:length(UniProt_seqs), function(i) {
                               data.frame(id = names(UniProt_seqs[i]),
                                          len = length(UniProt_seqs[[i]]))
-                            }) %>% 
+                            }) %>%
                               bind_rows(),
                             UniProt_len_distribution = calculate_len_distribution(UniProt_lens),
                             dbAMP_data = read.csv("./data/dbamp_df.csv", stringsAsFactors = FALSE),
                             dbAMP_lens = lapply(dbAMP_data[["Sequence"]], function(ith_seq) {
-                              strsplit(ith_seq, "")[[1]] %>% 
-                                length() 
-                            }) %>% 
-                              unlist() %>% 
+                              strsplit(ith_seq, "")[[1]] %>%
+                                length()
+                            }) %>%
+                              unlist() %>%
                               data.frame(len = .),
                             dbAMP_len_distribution = calculate_len_distribution(dbAMP_lens),
-                            benchmark_summ_table = pivot_longer(readd(benchmark_summ), c(AUC, MCC, precision, 
-                                                                                 sensitivity, specificity)) %>% 
-                              mutate(AmpGram = Software == "AmpGram_full"),
-                            benchmark_summ_plot = ggplot(benchmark_summ_table, aes(x = Software, y = value, color = AmpGram)) +
+                            benchmark_summ_table = pivot_longer(readd(benchmark_summ), c(AUC, MCC, Precision, 
+                                                                                 Sensitivity, Specificity), values_to = "Value"),
+                            benchmark_summ_plot = ggplot(benchmark_summ_table, aes(x = Software, y = Value)) +
                               geom_point() +
-                              facet_grid(len_group ~ name, scales = "free_y") +
-                              theme(axis.text.x = element_text(angle = 90)))
+                              facet_grid(len_group ~ name, scales = "free_y", labeller = labeller(len_group = as_labeller(
+                                c("all"="all lengths", "[11,19]"="11-19 aa", "(19,26]"="20-26 aa", "(26,36]"="27-36 aa", 
+                                  "(36,60]"="37-60 aa", "(60,710]"="61-710 aa")))) +
+                              theme_bw() +
+                              theme(axis.text.x = element_text(angle = 90)),
+                            lactoferrin_plot = get_lactoferrin_amp_profile())
 
 make(plots_AmpGram, seed = 990)
 
 file.copy(from = ".drake", to = paste0(data_path, "drake-cache"), recursive = TRUE, overwrite = TRUE)
+
+cairo_ps(filename = "benchmark.eps", width = 10)
+readd(benchmark_summ_plot)
+dev.off()
+
+cairo_ps(filename = "aa_comp.eps")
+readd(composition_plot)
+dev.off()

@@ -26,7 +26,7 @@ benchmark_AmpGram <- drake_plan(full_benchmark_mer_preds = mutate(benchmark_mer_
                                                                       Probability = predict(full_model_peptides, 
                                                                                             full_benchmark_stats[, 3:16])[["predictions"]][, "TRUE"],
                                                                       Decision = ifelse(Probability >= 0.5, TRUE, FALSE),
-                                                                      Software = "AmpGram_full"),
+                                                                      Software = "AmpGram"),
                                 len_groups = select(full_benchmark_stats, c("source_peptide", "len_group")),
                                 all_benchmark_res = preprocess_benchmark_data(full_benchmark_peptide_preds, len_groups),
                                 benchmark_summ = calculate_benchmark_summary(all_benchmark_res),
