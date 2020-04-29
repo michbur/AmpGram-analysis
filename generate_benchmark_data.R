@@ -7,6 +7,7 @@ source("./functions/get_mers.R")
 source("./functions/count_ampgrams.R")
 source("./functions/do_cv.R")
 source("./functions/test_alphabet.R")
+source("./functions/benchmark_functions.R")
 
 # Read in data
 mer_df <- readd(mer_df)
@@ -40,3 +41,13 @@ deg_benchmark_ngrams <- degenerate_ngrams(benchmark_ngrams, string2list("c_de_gw
 save(list = c("imp_bigrams", "full_model_mers", "full_model_peptides", "deg_binary_ngrams", "deg_imp_ngrams", "deg_model_mers", "deg_model_peptides", 
               "benchmark_mer_df", "benchmark_ngrams"),
      file = "./data/benchmark_data.RData")
+
+
+# Benchmark on WS Noble's datasets
+load("./data/benchmark_data.RData")
+Nobles_benchmark_datasets <- preprocess_Nobles_datasets()
+Nobles_datasets_preds <- predict_Nobles_datasets(Nobles_benchmark_datasets,
+                                                full_model_mers,
+                                                imp_bigrams,
+                                                full_model_peptides)
+saveRDS(Nobles_datasets_preds, file = "Nobles_datasets_benchmark_res.rds")

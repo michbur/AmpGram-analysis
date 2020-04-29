@@ -6,7 +6,6 @@ library(biogram)
 library(ggplot2)
 library(tidyr)
 library(pbapply)
-library(future)
 requireNamespace("mlr3measures")
 
 load("./data/benchmark_data.RData")
@@ -14,7 +13,6 @@ source("./functions/do_cv.R")
 source("./functions/benchmark_functions.R")
 source("./functions/test_alphabet.R")
 
-future::plan(future::multiprocess)
 
 
 benchmark_AmpGram <- drake_plan(full_benchmark_mer_preds = mutate(benchmark_mer_df,
@@ -38,7 +36,6 @@ benchmark_AmpGram <- drake_plan(full_benchmark_mer_preds = mutate(benchmark_mer_
                                                                                 imp_bigrams,
                                                                                 full_model_peptides))
 
-
-make(benchmark_AmpGram, parallelism = "future", jobs = 16)
+make(benchmark_AmpGram)
 
 file.copy(from = ".drake", to = paste0(data_path, "drake-cache"), recursive = TRUE, overwrite = TRUE)
