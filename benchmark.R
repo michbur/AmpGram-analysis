@@ -29,12 +29,13 @@ benchmark_AmpGram <- drake_plan(full_benchmark_mer_preds = mutate(benchmark_mer_
                                                                       Software = "AmpGram"),
                                 len_groups = select(full_benchmark_stats, c("source_peptide", "len_group")),
                                 all_benchmark_res = preprocess_benchmark_data(full_benchmark_peptide_preds, len_groups),
-                                benchmark_summ = calculate_benchmark_summary(all_benchmark_res),
-                                Nobles_benchmark_datasets = preprocess_Nobles_datasets(),
-                                Nobles_datasets_preds = predict_Nobles_datasets(Nobles_benchmark_datasets,
-                                                                                full_model_mers,
-                                                                                imp_bigrams,
-                                                                                full_model_peptides))
+                                benchmark_summ = calculate_benchmark_summary(all_benchmark_res)
+                                # Nobles_benchmark_datasets = preprocess_Nobles_datasets(),
+                                # Nobles_datasets_preds = predict_Nobles_datasets(Nobles_benchmark_datasets,
+                                #                                                 full_model_mers,
+                                #                                                 imp_bigrams,
+                                #                                                 full_model_peptides)
+                                )
 
 make(benchmark_AmpGram)
 
