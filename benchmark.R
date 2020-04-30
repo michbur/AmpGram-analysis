@@ -46,7 +46,7 @@ benchmark_AmpGram <- drake_plan(full_benchmark_mer_preds = mutate(benchmark_mer_
                                 ampscanner_res = read.csv("./results/ampscanner_noble.csv", stringsAsFactors = FALSE)[, c(1,3)] %>% 
                                   setNames(c("source_peptide", "Ampscanner")),
                                 amp_only = filter(Nobles_benchmark_datasets, !is.na(AMP_target)),
-                                Nobles_datasets_benchmark_res =  left_join(amp_only[,c(4:9, 15:17)], ampscanner_res) %>% 
+                                Nobles_datasets_benchmark_res = left_join(amp_only[,c(4:9, 15:17)], ampscanner_res) %>% 
                                   left_join(Nobles_datasets_preds[,c("source_peptide", "Probability")]) %>% 
                                   mutate(`CAMP.RF..score` = ifelse(is.infinite(`CAMP.RF..score`), 0, `CAMP.RF..score`)) %>% 
                                   mutate(`ADAM.score` = ifelse(is.infinite(`ADAM.score`), -3, `ADAM.score`)) %>% 
@@ -55,8 +55,28 @@ benchmark_AmpGram <- drake_plan(full_benchmark_mer_preds = mutate(benchmark_mer_
                                   setNames(c("ADAM", "CAMP-RF", "CAMP-SVM", "DBAASP", "MLAMP", "AMPA", "Dataset", "source_peptide", "target", "AMPScanner V2", "AmpGram")) %>% 
                                   pivot_longer(c("ADAM", "CAMP-RF", "CAMP-SVM", "DBAASP", "MLAMP", "AMPA", "AMPScanner V2", "AmpGram"), names_to = "Software",
                                                values_to = "Probability") %>% 
+                                  mutate(Decision = case_when(Software %in% c("CAMP-RF", "CAMP-SVM", "AmpGram", "AMPScanner V2") & Probability >= 0.5 ~ "TRUE",
+                                                              Software %in% c("CAMP-RF", "CAMP-SVM", "AmpGram", "AMPScanner V2") & Probability < 0.5 ~ "FALSE",
+                                                              Software == "MLAMP" & Probability >= 0.6 ~ "TRUE",
+                                                              Software == "MLAMP" & Probability < 0.6 ~ "FALSE",
+                                                              Software == "DBAASP" & Probability == 1 ~ "TRUE",
+                                                              Software == "DBAASP" & Probability == -1 ~ "FALSE",
+                                                              Software == "ADAM" & Probability > 0 ~ "TRUE",
+                                                              Software == "ADAM" & Probability <= 0 ~ "FALSE",
+                                                              Software == "AMPA" & Probability > 0 ~ "TRUE",
+                                                              Software == "AMPA" & Probability == -1 ~ "FALSE")) %>% 
+                                  mutate(Decision = as.factor(Decision),
+                                         target = as.factor(target)) %>% 
                                   group_by(Dataset, Software) %>% 
-                                  summarise(AUC = auc(target, Probability))
+                                  summarise(AUC = auc(target, Probability),
+                                            MCC = mlr3measures::mcc(target, Decision, 'TRUE'),
+                                            TP = sum(Decision == 'TRUE' & target == 'TRUE'),
+                                            TN = sum(Decision == 'FALSE' & target == 'FALSE'),
+                                            FP = sum(Decision == 'TRUE' & target == 'FALSE'),
+                                            FN = sum(Decision == 'FALSE' & target == 'TRUE'),
+                                            Precision = mlr3measures::precision(target, Decision, 'TRUE'),
+                                            Sensitivity = mlr3measures::sensitivity(target, Decision, 'TRUE'),
+                                            Specificity = mlr3measures::specificity(target, Decision, 'TRUE'))
                                 )
 
 make(benchmark_AmpGram)

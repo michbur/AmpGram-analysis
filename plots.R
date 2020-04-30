@@ -147,7 +147,15 @@ plots_AmpGram <- drake_plan(neg = readd(negative_data),
                               xlab("Position") +
                               ylab("Prediction") +
                               xlim(350) +
-                              theme_bw()
+                              theme_bw(),
+                            Nobles_benchmark_plot = readd(Nobles_datasets_benchmark_res)[,c(1:4, 9:11)] %>% 
+                              mutate(AUC = as.double(AUC)) %>% 
+                              pivot_longer(c("AUC", "MCC", "Precision", "Sensitivity", "Specificity"), names_to = "Measure", values_to = "Value") %>% 
+                              ggplot(aes(x = Software, y = Value)) +
+                              geom_point() +
+                              facet_grid(Dataset ~ Measure, scales = "free_y") + 
+                              theme_bw() +
+                              theme(axis.text.x = element_text(angle = 90))
 )
 
 
@@ -162,6 +170,3 @@ dev.off()
 cairo_ps(filename = "aa_comp.eps")
 readd(composition_plot)
 dev.off()
-
-
-
