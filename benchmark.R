@@ -6,6 +6,7 @@ library(biogram)
 library(ggplot2)
 library(tidyr)
 library(pbapply)
+library(pROC)
 requireNamespace("mlr3measures")
 
 load("./data/benchmark_data.RData")
@@ -34,15 +35,31 @@ benchmark_AmpGram <- drake_plan(full_benchmark_mer_preds = mutate(benchmark_mer_
                                                                       Decision = ifelse(Probability >= 0.5, TRUE, FALSE),
                                                                       Software = "AmpGram"),
                                 len_groups = select(full_benchmark_stats, c("source_peptide", "len_group")),
-                                all_benchmark_res = preprocess_benchmark_data(full_benchmark_peptide_preds, len_groups),
-                                benchmark_summ = calculate_benchmark_summary(all_benchmark_res)
-                                # Nobles_benchmark_datasets = preprocess_Nobles_datasets(),
-                                # Nobles_datasets_preds = predict_Nobles_datasets(Nobles_benchmark_datasets,
-                                #                                                 full_model_mers,
-                                #                                                 imp_bigrams,
-                                #                                                 full_model_peptides)
+                                 all_benchmark_res = preprocess_benchmark_data(full_benchmark_peptide_preds, len_groups),
+                                benchmark_summ = calculate_benchmark_summary(all_benchmark_res),
+                                Nobles_benchmark_datasets = preprocess_Nobles_datasets(),
+                                Nobles_datasets_preds = readRDS("./results/Nobles_datasets_benchmark_res.rds"),
+                                Nobles_APD_res = filter(Nobles_datasets_preds, grepl("APD", source_peptide)),
+                                Nobles_DAMPD_res = filter(Nobles_datasets_preds, grepl("DAMPD", source_peptide)),
+                                Nobles_APD_AUC = auc(Nobles_APD_res[["target"]], Nobles_APD_res[["Probability"]]),
+                                Nobles_DAMPD_AUC = auc(Nobles_DAMPD_res[["target"]], Nobles_DAMPD_res[["Probability"]]),
+                                ampscanner_res = read.csv("./results/ampscanner_noble.csv", stringsAsFactors = FALSE)[, c(1,3)] %>% 
+                                  setNames(c("source_peptide", "Ampscanner")),
+                                amp_only = filter(Nobles_benchmark_datasets, !is.na(AMP_target)),
+                                Nobles_datasets_benchmark_res =  left_join(amp_only[,c(4:9, 15:17)], ampscanner_res) %>% 
+                                  left_join(Nobles_datasets_preds[,c("source_peptide", "Probability")]) %>% 
+                                  mutate(`CAMP.RF..score` = ifelse(is.infinite(`CAMP.RF..score`), 0, `CAMP.RF..score`)) %>% 
+                                  mutate(`ADAM.score` = ifelse(is.infinite(`ADAM.score`), -3, `ADAM.score`)) %>% 
+                                  mutate(`CAMP.SVM..score` = ifelse(is.infinite(`CAMP.SVM..score`), 0, `CAMP.SVM..score`)) %>% 
+                                  mutate(Ampscanner = ifelse(is.na(Ampscanner), 0, Ampscanner)) %>% 
+                                  setNames(c("ADAM", "CAMP-RF", "CAMP-SVM", "DBAASP", "MLAMP", "AMPA", "Dataset", "source_peptide", "target", "AMPScanner V2", "AmpGram")) %>% 
+                                  pivot_longer(c("ADAM", "CAMP-RF", "CAMP-SVM", "DBAASP", "MLAMP", "AMPA", "AMPScanner V2", "AmpGram"), names_to = "Software",
+                                               values_to = "Probability") %>% 
+                                  group_by(Dataset, Software) %>% 
+                                  summarise(AUC = auc(target, Probability))
                                 )
 
 make(benchmark_AmpGram)
 
 file.copy(from = ".drake", to = paste0(data_path, "drake-cache"), recursive = TRUE, overwrite = TRUE)
+
