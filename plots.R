@@ -3,6 +3,7 @@ library(ggplot2)
 library(drake)
 library(biogram)
 library(tidyr)
+library(ranger)
 source("./functions/benchmark_functions.R")
 source("./functions/test_alphabet.R")
 load("./data/benchmark_data.RData")
@@ -53,8 +54,7 @@ calculate_len_distribution <- function(lens) {
 
 get_lactoferrin_amp_profile <- function() {
   prot <- read_fasta("./data/bovine_lactoferrin.fasta")
-  mer_df <- prot[20:length(prot)] %>% 
-    unlist() %>% 
+  mer_df <- unlist(unname(prot))[20:708] %>% 
     matrix(nrow = 1) %>% 
     get_single_seq_mers() %>% 
     data.frame(stringsAsFactors = FALSE) %>% 
