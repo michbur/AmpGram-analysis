@@ -52,42 +52,35 @@ calculate_len_distribution <- function(lens) {
 }
 
 
-get_lactoferrin_amp_profile <- function() {
+get_lactoferrin_preds <- function() {
   prot <- read_fasta("./data/bovine_lactoferrin.fasta")
-  mer_df <- unlist(unname(prot))[20:708] %>% 
+  mer_df <- unlist(unname(prot)) %>% 
     matrix(nrow = 1) %>% 
     get_single_seq_mers() %>% 
     data.frame(stringsAsFactors = FALSE) %>% 
     mutate(source_peptide = "lactoferrin",
            mer_id = paste0(source_peptide, "_m", 1L:nrow(.)))
   imp_ngrams <- count_imp_ampgrams(mer_df, imp_bigrams)
-  amp_regions <- c(1:11, 17:41, 268:284)
+#  amp_regions <- c(1:11, 17:41, 268:284)
+  amp_regions <- c(20:30, 36:60, 287:303)
   pred_mers <- mutate(mer_df, 
                       pred = predict(full_model_mers, as.matrix(imp_ngrams))[["predictions"]][,"TRUE"],
                       pos = 1L:nrow(mer_df),
                       region = ifelse(pos %in% amp_regions, "AMP", "non-AMP"))
+}
 
-  detailed_preds <- do.call(rbind, lapply(unique(pred_mers[["source_peptide"]]), function(single_prot) {
+  get_lactoferrin_detailed_preds <- function(pred_mers) {
+    do.call(rbind, lapply(unique(pred_mers[["source_peptide"]]), function(single_prot) {
     mer_preds <- pred_mers[pred_mers[["source_peptide"]] == single_prot, "pred"]
     pos_matrix <- do.call(cbind, get_ngrams_ind(length(mer_preds) + 9, 10, 0))
     data.frame(
       Protein = single_prot,
       Pos = unique(as.vector(pos_matrix)),
       Probability = unlist(lapply(unique(as.vector(pos_matrix)), function(i)
-        mean(mer_preds[which(pos_matrix == i, arr.ind = TRUE)[, "row"]])
+        max(mer_preds[which(pos_matrix == i, arr.ind = TRUE)[, "row"]])
       )))
   }))
-  
-  ggplot(detailed_preds, aes(x = Pos, y = Probability, group = Protein)) +
-    geom_ribbon(mapping = aes(xmin = 1, xmax = 11), fill = "red") +
-    geom_ribbon(mapping = aes(xmin = 17, xmax = 41), fill = "red") +
-    geom_ribbon(mapping = aes(xmin = 268, xmax = 284), fill = "red") +
-    geom_point() +
-    geom_line() +
-    geom_hline(yintercept = 0.5, color = "red") +
-    theme_bw()
 }
-
 
 
 plots_AmpGram <- drake_plan(neg = readd(negative_data),
@@ -134,7 +127,29 @@ plots_AmpGram <- drake_plan(neg = readd(negative_data),
                                   "(36,60]"="37-60 aa", "(60,710]"="61-710 aa")))) +
                               theme_bw() +
                               theme(axis.text.x = element_text(angle = 90)),
-                            lactoferrin_plot = get_lactoferrin_amp_profile())
+                            lactoferrin_preds = get_lactoferrin_preds(),
+                            lactoferrin_detailed_preds = get_lactoferrin_detailed_preds(lactoferrin_preds),
+                            lactoferrin_profile_plot = ggplot(detailed_preds, aes(x = Pos, y = Probability, group = Protein)) +
+                              geom_ribbon(mapping = aes(xmin = 20, xmax = 30), fill = "red") +
+                              geom_ribbon(mapping = aes(xmin = 36, xmax = 60), fill = "red") +
+                              geom_ribbon(mapping = aes(xmin = 287, xmax = 303), fill = "red") +
+                              geom_point() +
+                              geom_line() +
+                              geom_hline(yintercept = 0.5, color = "red") +
+                              theme_bw(),
+                            lactoferrin_mers_plot = ggplot(lactoferrin_preds, aes(x = pos, y = pred)) +
+                              geom_hline(yintercept = 0.5, color = "red") +
+                              geom_ribbon(mapping = aes(xmin = 20, xmax = 30), fill = "#f8766d") +
+                              geom_ribbon(mapping = aes(xmin = 36, xmax = 60), fill = "#f8766d") +
+                              geom_ribbon(mapping = aes(xmin = 287, xmax = 303), fill = "#f8766d") +
+                              geom_segment(x = 1:length(lactoferrin_preds[["pos"]]), y = lactoferrin_preds[["pred"]], 
+                                           xend = 10:(length(lactoferrin_preds[["pos"]])+9), yend = lactoferrin_preds[["pred"]]) +
+                              xlab("Position") +
+                              ylab("Prediction") +
+                              xlim(350) +
+                              theme_bw()
+)
+
 
 make(plots_AmpGram, seed = 990)
 
@@ -147,3 +162,6 @@ dev.off()
 cairo_ps(filename = "aa_comp.eps")
 readd(composition_plot)
 dev.off()
+
+
+
