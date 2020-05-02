@@ -43,7 +43,7 @@ benchmark_AmpGram <- drake_plan(full_benchmark_mer_preds = mutate(benchmark_mer_
                                 Nobles_DAMPD_res = filter(Nobles_datasets_preds, grepl("DAMPD", source_peptide)),
                                 Nobles_APD_AUC = auc(Nobles_APD_res[["target"]], Nobles_APD_res[["Probability"]]),
                                 Nobles_DAMPD_AUC = auc(Nobles_DAMPD_res[["target"]], Nobles_DAMPD_res[["Probability"]]),
-                                ampscanner_res = read.csv("./results/ampscanner_noble.csv", stringsAsFactors = FALSE)[, c(1,3)] %>% 
+                                ampscanner_res = read.csv("./data/ampscanner_noble.csv", stringsAsFactors = FALSE)[, c(1,3)] %>% 
                                   setNames(c("source_peptide", "Ampscanner")),
                                 amp_only = filter(Nobles_benchmark_datasets, !is.na(AMP_target)),
                                 Nobles_datasets_benchmark_res = left_join(amp_only[,c(4:9, 15:17)], ampscanner_res) %>% 
