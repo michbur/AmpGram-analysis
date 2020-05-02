@@ -38,7 +38,7 @@ benchmark_AmpGram <- drake_plan(full_benchmark_mer_preds = mutate(benchmark_mer_
                                  all_benchmark_res = preprocess_benchmark_data(full_benchmark_peptide_preds, len_groups),
                                 benchmark_summ = calculate_benchmark_summary(all_benchmark_res),
                                 Nobles_benchmark_datasets = preprocess_Nobles_datasets(),
-                                Nobles_datasets_preds = readRDS("./results/Nobles_datasets_benchmark_res2.rds"),
+                                Nobles_datasets_preds = readRDS("./results/Nobles_datasets_benchmark_res.rds"),
                                 Nobles_APD_res = filter(Nobles_datasets_preds, grepl("APD", source_peptide)),
                                 Nobles_DAMPD_res = filter(Nobles_datasets_preds, grepl("DAMPD", source_peptide)),
                                 Nobles_APD_AUC = auc(Nobles_APD_res[["target"]], Nobles_APD_res[["Probability"]]),
@@ -66,7 +66,8 @@ benchmark_AmpGram <- drake_plan(full_benchmark_mer_preds = mutate(benchmark_mer_
                                                               Software == "AMPA" & Probability > 0 ~ "TRUE",
                                                               Software == "AMPA" & Probability == -1 ~ "FALSE")) %>% 
                                   mutate(Decision = as.factor(Decision),
-                                         target = as.factor(target)) %>% 
+                                         target = as.factor(target),
+                                         Software = relevel(as.factor(Software), "AmpGram")) %>% 
                                   group_by(Dataset, Software) %>% 
                                   summarise(AUC = auc(target, Probability),
                                             MCC = mlr3measures::mcc(target, Decision, 'TRUE'),

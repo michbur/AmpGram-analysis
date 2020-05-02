@@ -56,8 +56,8 @@ get_single_seq_mers <- function(seq) {
 
 preprocess_benchmark_data <- function(full_benchmark_peptide_preds, len_groups) {
   iAMPpred <- read.delim("./data/iAMPpred_benchmark.csv")[,-1] %>% 
-    setNames(c("source_peptide", "iAMPpred_antibacterial", "iAMPpred_antiviral", "iAMPpred_antifungal")) %>% 
-    pivot_longer(c("iAMPpred_antibacterial", "iAMPpred_antiviral", "iAMPpred_antifungal"), names_to = "Software", values_to = "Probability")
+    setNames(c("source_peptide", "iAMPpred (antibacterial)", "iAMPpred (antiviral)", "iAMPpred (antifungal)")) %>% 
+    pivot_longer(c("iAMPpred (antibacterial)", "iAMPpred (antiviral)", "iAMPpred (antifungal)"), names_to = "Software", values_to = "Probability")
   
   all_benchmark_res <- read.csv("./data/benchmark_all.csv") %>% 
     setNames(c("Software", "source_peptide", "Decision", "Probability")) %>% 
@@ -68,8 +68,8 @@ preprocess_benchmark_data <- function(full_benchmark_peptide_preds, len_groups) 
            source_peptide = gsub("dbAMP", "dbAMP_", source_peptide),
            source_peptide = gsub("__", "_", source_peptide))
   
-  all_benchmark_res[["Decision"]][all_benchmark_res[["Software"]] %in% c("iAMPpred_antibacterial", "iAMPpred_antiviral", "iAMPpred_antifungal")] <- ifelse(
-    (all_benchmark_res[["Probability"]][all_benchmark_res[["Software"]] %in% c("iAMPpred_antibacterial", "iAMPpred_antiviral", "iAMPpred_antifungal")] >= 0.5), 
+  all_benchmark_res[["Decision"]][all_benchmark_res[["Software"]] %in% c("iAMPpred (antibacterial)", "iAMPpred (antiviral)", "iAMPpred (antifungal)")] <- ifelse(
+    (all_benchmark_res[["Probability"]][all_benchmark_res[["Software"]] %in% c("iAMPpred (antibacterial)", "iAMPpred (antiviral)", "iAMPpred (antifungal)")] >= 0.5), 
     TRUE, FALSE)
   
   all_benchmark_res <- mutate(all_benchmark_res, target = ifelse(grepl("dbAMP", source_peptide), "TRUE", "FALSE")) %>% 
@@ -110,7 +110,8 @@ calculate_benchmark_summary <- function(all_benchmark_res) {
                             len_group = ifelse(length(ith_length) > 1, "all", as.character(ith_length)))
              }) %>% bind_rows()
   }) %>% bind_rows() %>% 
-    mutate(len_group = factor(len_group, levels = sort_group(unique(len_group))))
+    mutate(len_group = factor(len_group, levels = sort_group(unique(len_group))),
+           Software = relevel(factor(Software), "AmpGram"))
 }
 
 
