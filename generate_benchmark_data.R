@@ -70,4 +70,4 @@ Nobles_datasets_peptide_preds <- mutate(Nobles_datasets_stats,
                                                               Nobles_datasets_stats[, 3:16])[["predictions"]][, "TRUE"],
                                         Decision = ifelse(Probability >= 0.5, TRUE, FALSE),
                                         Software = "AmpGram_full")
-saveRDS(Nobles_datasets_peptide_preds, file = "Nobles_datasets_benchmark_res.rds")
+saveRDS(Nobles_datasets_peptide_preds, file = "./results/Nobles_datasets_benchmark_res.rds")
