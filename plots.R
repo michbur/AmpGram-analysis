@@ -131,35 +131,37 @@ plots_AmpGram <- drake_plan(neg = readd(negative_data),
                             lactoferrin_preds = get_prot_preds("bovine_lactoferrin", c(20:30, 36:60, 287:303)),
                             lactoferrin_detailed_preds = get_detailed_preds(lactoferrin_preds),
                             lactoferrin_profile_plot = ggplot(lactoferrin_detailed_preds, aes(x = Pos, y = Probability, group = Protein)) +
-                              geom_ribbon(mapping = aes(xmin = 20, xmax = 30), fill = "red") +
-                              geom_ribbon(mapping = aes(xmin = 36, xmax = 60), fill = "red") +
-                              geom_ribbon(mapping = aes(xmin = 287, xmax = 303), fill = "red") +
+                              geom_ribbon(mapping = aes(xmin = 20, xmax = 30, ymin = 0, ymax = 1), fill = "red") +
+                              geom_ribbon(mapping = aes(xmin = 36, xmax = 60, ymin = 0, ymax = 1), fill = "red") +
+                              geom_ribbon(mapping = aes(xmin = 287, xmax = 303, ymin = 0, ymax = 1), fill = "red") +
                               geom_point() +
                               geom_line() +
                               geom_hline(yintercept = 0.5, color = "red") +
                               theme_bw(),
                             lactoferrin_mers_plot = ggplot(lactoferrin_preds, aes(x = pos, y = pred)) +
                               geom_hline(yintercept = 0.5, color = "red") +
-                              geom_ribbon(mapping = aes(xmin = 20, xmax = 30), fill = "#f8766d") +
-                              geom_ribbon(mapping = aes(xmin = 36, xmax = 60), fill = "#f8766d") +
-                              geom_ribbon(mapping = aes(xmin = 287, xmax = 303), fill = "#f8766d") +
+                              geom_rect(mapping = aes(xmin = 20, xmax = 30, ymin = 0, ymax = 1), fill = "#f8766d") +
+                              geom_rect(mapping = aes(xmin = 36, xmax = 60, ymin = 0, ymax = 1), fill = "#f8766d") +
+                              geom_rect(mapping = aes(xmin = 287, xmax = 303, ymin = 0, ymax = 1), fill = "#f8766d") +
                               geom_segment(x = 1:length(lactoferrin_preds[["pos"]]), y = lactoferrin_preds[["pred"]],
                                            xend = 10:(length(lactoferrin_preds[["pos"]])+9), yend = lactoferrin_preds[["pred"]],
                                            colour = ifelse(lactoferrin_preds[["pred"]] < 0.5, "#878787", "black")) +
                               xlab("Position") +
                               ylab("Prediction") +
+                              ylim(c(0,1)) +
                               scale_x_continuous(breaks = seq(0, length(lactoferrin_preds[["pos"]])+9, by = 20), limits = c(0,708), expand = c(0.01,0.01))+
                               theme_bw(),
                             thrombin_preds = get_prot_preds("thrombin", c(597:622)),
                             thrombin_detailed_preds = get_detailed_preds(thrombin_preds),
                             thrombin_mers_plot = ggplot(thrombin_preds, aes(x = pos, y = pred)) +
                               geom_hline(yintercept = 0.5, color = "red") +
-                              geom_ribbon(mapping = aes(xmin = 597, xmax = 622), fill = "#f8766d") +
+                              geom_rect(mapping = aes(xmin = 597, xmax = 622, ymin = 0, ymax = 1), fill = "#f8766d") +
                               geom_segment(x = 1:length(thrombin_preds[["pos"]]), y = thrombin_preds[["pred"]],
                                            xend = 10:(length(thrombin_preds[["pos"]])+9), yend = thrombin_preds[["pred"]],
                                            colour = ifelse(thrombin_preds[["pred"]] < 0.5, "#878787", "black")) +
                               xlab("Position") +
                               ylab("Prediction") +
+                              ylim(c(0,1)) +
                               scale_x_continuous(breaks = seq(0, length(thrombin_preds[["pos"]])+9, by = 20), limits = c(0,622), expand = c(0.01,0.01)) +
                               theme_bw(),
                             Nobles_benchmark_plot = readd(Nobles_datasets_benchmark_res)[,c(1:4, 9:11)] %>% 
@@ -180,11 +182,19 @@ file.copy(from = ".drake", to = paste0(data_path, "drake-cache"), recursive = TR
 cairo_ps(filename = "benchmark.eps", width = 10)
 readd(benchmark_summ_plot)
 dev.off()
-
-cairo_ps(filename = "aa_comp.eps")
+  
+cairo_ps(filename = "aa_comp.eps", width = 10, height = 4)
 readd(composition_plot)
 dev.off()
 
 cairo_ps(filename = "Noble_benchmark.eps", width = 10, height = 4)
 readd(Nobles_benchmark_plot)
+dev.off()
+
+cairo_ps(filename = "lactoferrin_mers.eps", width = 10, height = 2.5)
+readd(lactoferrin_mers_plot)
+dev.off()
+
+cairo_ps(filename = "thrombin_mers.eps", width = 10, height = 2.5)
+readd(thrombin_mers_plot)
 dev.off()
