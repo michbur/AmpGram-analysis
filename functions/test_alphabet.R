@@ -40,7 +40,7 @@ train_model_peptides <- function(mer_statistics) {
              "frac_0.6_0.8", "frac_0.8_1"))
   model_cv <- ranger(dependent.variable.name = "target", data = train_dat, 
                      write.forest = TRUE, probability = TRUE, num.trees = 500, 
-                     verbose = FALSE, classification = TRUE)
+                     verbose = FALSE, classification = TRUE, seed = 990)
   model_cv
 }
 

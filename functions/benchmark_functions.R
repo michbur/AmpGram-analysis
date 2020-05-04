@@ -13,7 +13,7 @@ train_model_mers <- function(train_mer_df, train_groups, train_binary_ngrams, im
   
   model_full_alphabet <- ranger(dependent.variable.name = "tar", data = ranger_train_data, 
                                 write.forest = TRUE, probability = TRUE, num.trees = 2000, 
-                                verbose = FALSE)
+                                verbose = FALSE, seed = 990)
   model_full_alphabet
 }
 
