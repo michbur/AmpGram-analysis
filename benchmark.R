@@ -85,8 +85,8 @@ make(benchmark_AmpGram)
 
 file.copy(from = ".drake", to = paste0(data_path, "drake-cache"), recursive = TRUE, overwrite = TRUE)
 
-write.csv(benchmark_summ, filename = paste0(data_path, "publication_results/benchmark_results.csv"), row.names = FALSE)
-write.csv(Nobles_datasets_benchmark_res, filename = paste0(data_path, "publication_results/Nobles_benchmark_results.csv"), 
+write.csv(benchmark_summ, file = paste0(data_path, "publication-results/benchmark_results.csv"), row.names = FALSE)
+write.csv(Nobles_datasets_benchmark_res, file = paste0(data_path, "publication-results/Nobles_benchmark_results.csv"), 
           row.names = FALSE)
 
 
@@ -99,7 +99,7 @@ lapply(unique(Nobles_datasets_benchmark_res[["Dataset"]]), function(ith_set) {
            caption = "",
            label = paste0("Nobles_benchmark_", ith_set)) %>% 
     print(include.rownames = FALSE, booktabs = TRUE) %>% 
-    writeLines(.,paste0("benchmark_Noble_", ith_set, ".txt"))
+    writeLines(.,paste0(data_path, "publication-results/benchmark_Noble_", ith_set, ".txt"))
 })
 
 
@@ -116,5 +116,5 @@ lapply(unique(benchmark_summ[["len_group"]]), function(ith_group) {
            caption = "",
            label = paste0("benchmark_", ith_group)) %>% 
     print(include.rownames = FALSE, booktabs = TRUE) %>% 
-    writeLines(.,paste0("table_", ith_group, ".txt"))
+    writeLines(.,paste0(data_path, "publication-results/table_", ith_group, ".txt"))
 })

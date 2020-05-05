@@ -64,23 +64,23 @@ make(plots_AmpGram, seed = 990)
 
 file.copy(from = ".drake", to = paste0(data_path, "drake-cache"), recursive = TRUE, overwrite = TRUE)
 
-cairo_ps(filename = paste0(data_path, "publication_results/benchmark.eps"), width = 10)
+cairo_ps(filename = paste0(data_path, "publication-results/benchmark.eps"), width = 10)
 benchmark_summ_plot
 dev.off()
   
-cairo_ps(filename = paste0(data_path, "publication_results/aa_comp.eps"), width = 10, height = 4)
+cairo_ps(filename = paste0(data_path, "publication-results/aa_comp.eps"), width = 10, height = 4)
 composition_plot
 dev.off()
 
-cairo_ps(filename = paste0(data_path, "publication_results/Noble_benchmark.eps"), width = 10, height = 4)
+cairo_ps(filename = paste0(data_path, "publication-results/Noble_benchmark.eps"), width = 10, height = 4)
 Nobles_benchmark_plot
 dev.off()
 
-cairo_ps(filename = paste0(data_path, "publication_results/lactoferrin_mers.eps"), width = 10, height = 2.5)
+cairo_ps(filename = paste0(data_path, "publication-results/lactoferrin_mers.eps"), width = 10, height = 2.5)
 lactoferrin_mers_plot
 dev.off()
 
-cairo_ps(filename = paste0(data_path, "publication_results/thrombin_mers.eps"), width = 10, height = 2.5)
+cairo_ps(filename = paste0(data_path, "publication-results/thrombin_mers.eps"), width = 10, height = 2.5)
 thrombin_mers_plot
 dev.off()
 
