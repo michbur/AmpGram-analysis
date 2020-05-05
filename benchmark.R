@@ -7,6 +7,7 @@ library(ggplot2)
 library(tidyr)
 library(pbapply)
 library(pROC)
+library(xtable)
 requireNamespace("mlr3measures")
 
 load("./data/benchmark_data.RData")
@@ -35,7 +36,7 @@ benchmark_AmpGram <- drake_plan(full_benchmark_mer_preds = mutate(benchmark_mer_
                                                                       Decision = ifelse(Probability >= 0.5, TRUE, FALSE),
                                                                       Software = "AmpGram"),
                                 len_groups = select(full_benchmark_stats, c("source_peptide", "len_group")),
-                                 all_benchmark_res = preprocess_benchmark_data(full_benchmark_peptide_preds, len_groups),
+                                all_benchmark_res = preprocess_benchmark_data(full_benchmark_peptide_preds, len_groups),
                                 benchmark_summ = calculate_benchmark_summary(all_benchmark_res),
                                 Nobles_benchmark_datasets = preprocess_Nobles_datasets(),
                                 Nobles_datasets_preds = readRDS("./results/Nobles_datasets_benchmark_res.rds"),
@@ -84,3 +85,36 @@ make(benchmark_AmpGram)
 
 file.copy(from = ".drake", to = paste0(data_path, "drake-cache"), recursive = TRUE, overwrite = TRUE)
 
+write.csv(benchmark_summ, filename = paste0(data_path, "publication_results/benchmark_results.csv"), row.names = FALSE)
+write.csv(Nobles_datasets_benchmark_res, filename = paste0(data_path, "publication_results/Nobles_benchmark_results.csv"), 
+          row.names = FALSE)
+
+
+# Generate tables with benchmark results on Noble's datasets
+lapply(unique(Nobles_datasets_benchmark_res[["Dataset"]]), function(ith_set) {
+  filter(Nobles_datasets_benchmark_res, Dataset == ith_set) %>% 
+    ungroup %>% 
+    select(c("Software", "AUC", "MCC", "Precision", "Sensitivity", "Specificity")) %>% 
+    xtable(digits = 4, 
+           caption = "",
+           label = paste0("Nobles_benchmark_", ith_set)) %>% 
+    print(include.rownames = FALSE, booktabs = TRUE) %>% 
+    writeLines(.,paste0("benchmark_Noble_", ith_set, ".txt"))
+})
+
+
+# Generate tables with benchmark results on our datasets
+lapply(unique(benchmark_summ[["len_group"]]), function(ith_group) {
+  print(ith_group)
+  benchmark_summ[, c(7,2,1,3,4,5,6,8)] %>% 
+    filter(len_group == ith_group) %>% 
+    mutate(Software = ifelse(prob == "TRUE", paste0(Software), paste0(Software, "*"))) %>% 
+    mutate(Software = relevel(as.factor(Software), "AmpGram")) %>% 
+    select(-c(len_group, prob)) %>% 
+    arrange(Software) %>% 
+    xtable(digits = 4, 
+           caption = "",
+           label = paste0("benchmark_", ith_group)) %>% 
+    print(include.rownames = FALSE, booktabs = TRUE) %>% 
+    writeLines(.,paste0("table_", ith_group, ".txt"))
+})
