@@ -15,13 +15,17 @@ mer_df <- readd(mer_df)
 binary_ngrams <- readd(binary_ngrams)
 
 # Train full alphabet models
-imp_bigrams <- calc_imp_bigrams(mer_df, binary_ngrams, c("[11,19]", "(19,26]"), 0.001)
+#imp_bigrams <- calc_imp_bigrams(mer_df, binary_ngrams, c("[11,19]", "(19,26]"), 0.001)
+imp_bigrams <- calc_imp_bigrams(mer_df, binary_ngrams, c("[11,19]", "(19,26]"), 0.0000001)
 full_model_mers <- train_model_mers(mer_df, c("[11,19]", "(19,26]"), binary_ngrams, imp_bigrams)
 mer_preds <- pblapply(unique(mer_df[["group"]]), cl = 16, function(ith_group) {
   filter(mer_df, group == ith_group) %>% 
     mutate(pred = predict(full_model_mers, data.frame(as.matrix(binary_ngrams[mer_df[["group"]] == ith_group, imp_bigrams])))[["predictions"]][, "TRUE"])
 }) %>% bind_rows()
 full_model_peptides <- train_model_peptides(calculate_statistics(mer_preds))
+AmpGram_model_smaller_cutoff <- list("rf_mers" = full_model_mers, "rf_peptides" = full_model_peptides, "imp_features" = imp_bigrams)
+class(AmpGram_model_smaller_cutoff) <- "ag_model"
+save(AmpGram_model_smaller_cutoff, "AmpGram_model_smaller_cutoff.rda", compress = "xz", compression_level = 9)
 
 # Train model using best alphabet
 # deg_binary_ngrams <- degenerate_ngrams(binary_ngrams, string2list("c_de_gw_hkr_afilmv_npqsty"), binarize = TRUE)
