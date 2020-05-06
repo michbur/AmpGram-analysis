@@ -53,11 +53,11 @@ benchmark_AmpGram <- drake_plan(full_benchmark_mer_preds = mutate(benchmark_mer_
                                   mutate(`ADAM.score` = ifelse(is.infinite(`ADAM.score`), -3, `ADAM.score`)) %>% 
                                   mutate(`CAMP.SVM..score` = ifelse(is.infinite(`CAMP.SVM..score`), 0, `CAMP.SVM..score`)) %>% 
                                   mutate(Ampscanner = ifelse(is.na(Ampscanner), 0, Ampscanner)) %>% 
-                                  setNames(c("ADAM", "CAMP-RF", "CAMP-SVM", "DBAASP", "MLAMP", "AMPA", "Dataset", "source_peptide", "target", "AMPScanner V2", "AmpGram")) %>% 
-                                  pivot_longer(c("ADAM", "CAMP-RF", "CAMP-SVM", "DBAASP", "MLAMP", "AMPA", "AMPScanner V2", "AmpGram"), names_to = "Software",
+                                  setNames(c("ADAM", "CAMPR3-RF", "CAMPR3-SVM", "DBAASP", "MLAMP", "AMPA", "Dataset", "source_peptide", "target", "AMPScanner V2", "AmpGram")) %>% 
+                                  pivot_longer(c("ADAM", "CAMPR3-RF", "CAMPR3-SVM", "DBAASP", "MLAMP", "AMPA", "AMPScanner V2", "AmpGram"), names_to = "Software",
                                                values_to = "Probability") %>% 
-                                  mutate(Decision = case_when(Software %in% c("CAMP-RF", "CAMP-SVM", "AmpGram", "AMPScanner V2") & Probability >= 0.5 ~ "TRUE",
-                                                              Software %in% c("CAMP-RF", "CAMP-SVM", "AmpGram", "AMPScanner V2") & Probability < 0.5 ~ "FALSE",
+                                  mutate(Decision = case_when(Software %in% c("CAMPR3-RF", "CAMPR3-SVM", "AmpGram", "AMPScanner V2") & Probability >= 0.5 ~ "TRUE",
+                                                              Software %in% c("CAMPR3-RF", "CAMPR3-SVM", "AmpGram", "AMPScanner V2") & Probability < 0.5 ~ "FALSE",
                                                               Software == "MLAMP" & Probability >= 0.6 ~ "TRUE",
                                                               Software == "MLAMP" & Probability < 0.6 ~ "FALSE",
                                                               Software == "DBAASP" & Probability == 1 ~ "TRUE",
@@ -94,7 +94,7 @@ write.csv(Nobles_datasets_benchmark_res, file = paste0(data_path, "publication-r
 lapply(unique(Nobles_datasets_benchmark_res[["Dataset"]]), function(ith_set) {
   filter(Nobles_datasets_benchmark_res, Dataset == ith_set) %>% 
     ungroup %>% 
-    select(c("Software", "AUC", "MCC", "Precision", "Sensitivity", "Specificity")) %>% 
+    select(c("Software", "AUC", "Precision", "Sensitivity", "Specificity")) %>% 
     xtable(digits = 4, 
            caption = "",
            label = paste0("Nobles_benchmark_", ith_set)) %>% 
@@ -106,7 +106,7 @@ lapply(unique(Nobles_datasets_benchmark_res[["Dataset"]]), function(ith_set) {
 # Generate tables with benchmark results on our datasets
 lapply(unique(benchmark_summ[["len_group"]]), function(ith_group) {
   print(ith_group)
-  benchmark_summ[, c(7,2,1,3,4,5,6,8)] %>% 
+  benchmark_summ[, c(7,2,1,4,5,6,8)] %>% 
     filter(len_group == ith_group) %>% 
     mutate(Software = ifelse(prob == "TRUE", paste0(Software), paste0(Software, "*"))) %>% 
     mutate(Software = relevel(as.factor(Software), "AmpGram")) %>% 

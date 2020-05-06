@@ -66,7 +66,11 @@ preprocess_benchmark_data <- function(full_benchmark_peptide_preds, len_groups) 
     filter(!(Software %in% c("Amylogram", "ADAM-HMM", "AVPred"))) %>% 
     mutate(source_peptide = gsub("DBAMP", "dbAMP_", source_peptide),
            source_peptide = gsub("dbAMP", "dbAMP_", source_peptide),
-           source_peptide = gsub("__", "_", source_peptide))
+           source_peptide = gsub("__", "_", source_peptide),
+           Software = ifelse(Software == "iAMP", paste0("iAMP-2L"), paste0(Software)),
+           Software = gsub("CAMP", "CAMPR", Software),
+           Software = gsub("ADAM-SVM", "ADAM", Software),
+           Software = gsub("AMPScannerV2", "AMPScanner V2", Software))
   
   all_benchmark_res[["Decision"]][all_benchmark_res[["Software"]] %in% c("iAMPpred (antibacterial)", "iAMPpred (antiviral)", "iAMPpred (antifungal)")] <- ifelse(
     (all_benchmark_res[["Probability"]][all_benchmark_res[["Software"]] %in% c("iAMPpred (antibacterial)", "iAMPpred (antiviral)", "iAMPpred (antifungal)")] >= 0.5), 
@@ -75,7 +79,6 @@ preprocess_benchmark_data <- function(full_benchmark_peptide_preds, len_groups) 
   all_benchmark_res <- mutate(all_benchmark_res, target = ifelse(grepl("dbAMP", source_peptide), "TRUE", "FALSE")) %>% 
     left_join(len_groups, by = "source_peptide")
 }
-
 
 
 calculate_benchmark_summary <- function(all_benchmark_res) {

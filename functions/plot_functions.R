@@ -133,9 +133,9 @@ get_thrombin_mers_plot <- function(thrombin_preds) {
 
 
 get_Nobles_benchmark_plot <- function(Nobles_datasets_benchmark_res) {
-  Nobles_datasets_benchmark_res[,c(1:4, 9:11)] %>% 
+  Nobles_datasets_benchmark_res[,c(1:3, 9:11)] %>% 
     mutate(AUC = as.double(AUC)) %>% 
-    pivot_longer(c("AUC", "MCC", "Precision", "Sensitivity", "Specificity"), names_to = "Measure", values_to = "Value") %>% 
+    pivot_longer(c("AUC", "Precision", "Sensitivity", "Specificity"), names_to = "Measure", values_to = "Value") %>% 
     ggplot(aes(x = Software, y = Value)) +
     geom_point() +
     facet_grid(Dataset ~ Measure, scales = "free_y") + 

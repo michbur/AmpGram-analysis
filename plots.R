@@ -16,7 +16,7 @@ if(Sys.info()[["nodename"]] %in% c("amyloid", "phobos", "huawei")) {
 if(Sys.info()[["nodename"]] %in% c("kasia-MACH-WX9", "ryzen")) {
   data_path <- "/home/kasia/Dropbox/AmpGram-analysis/"
 }
-
+  
 
 plots_AmpGram <- drake_plan(neg = readd(negative_data),
                             pos = readd(cdhit_data),
@@ -47,7 +47,7 @@ plots_AmpGram <- drake_plan(neg = readd(negative_data),
                             dbAMP_len_distribution = calculate_len_distribution(dbAMP_lens),
                             benchmark_summ_table = pivot_longer(readd(benchmark_summ), c(AUC, MCC, Precision, 
                                                                                          Sensitivity, Specificity), values_to = "Value"),
-                            benchmark_summ_plot = get_benchmark_summ_plot(benchmark_summ_table),
+                            benchmark_summ_plot = get_benchmark_summ_plot(filter(benchmark_summ_table, name != "MCC")),
                             lactoferrin_preds = get_prot_preds("bovine_lactoferrin", c(20:30, 36:60, 287:303)),
                             lactoferrin_detailed_preds = get_detailed_preds(lactoferrin_preds),
                             lactoferrin_profile_plot = get_lactoferrin_profile_plot(lactoferrin_detailed_preds),
