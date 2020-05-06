@@ -63,7 +63,7 @@ preprocess_benchmark_data <- function(full_benchmark_peptide_preds, len_groups) 
     setNames(c("Software", "source_peptide", "Decision", "Probability")) %>% 
     bind_rows(full_benchmark_peptide_preds[, c(1,4:6)]) %>% 
     bind_rows(iAMPpred) %>% 
-    filter(!(Software %in% c("Amylogram", "ADAM-HMM"))) %>% 
+    filter(!(Software %in% c("Amylogram", "ADAM-HMM", "AVPred"))) %>% 
     mutate(source_peptide = gsub("DBAMP", "dbAMP_", source_peptide),
            source_peptide = gsub("dbAMP", "dbAMP_", source_peptide),
            source_peptide = gsub("__", "_", source_peptide))
