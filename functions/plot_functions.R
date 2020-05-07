@@ -91,16 +91,17 @@ get_benchmark_summ_plot <- function(benchmark_summ_table) {
 
 get_lactoferrin_mers_plot <- function(lactoferrin_preds) {
   ggplot(lactoferrin_preds, aes(x = pos, y = pred)) +
-    geom_hline(yintercept = 0.5, color = "red") +
     geom_rect(mapping = aes(xmin = 20, xmax = 30, ymin = 0, ymax = 1), fill = "#f8766d") +
     geom_rect(mapping = aes(xmin = 36, xmax = 60, ymin = 0, ymax = 1), fill = "#f8766d") +
     geom_rect(mapping = aes(xmin = 287, xmax = 303, ymin = 0, ymax = 1), fill = "#f8766d") +
     geom_segment(x = 1:length(lactoferrin_preds[["pos"]]), y = lactoferrin_preds[["pred"]],
                  xend = 10:(length(lactoferrin_preds[["pos"]])+9), yend = lactoferrin_preds[["pred"]],
                  colour = ifelse(lactoferrin_preds[["pred"]] < 0.5, "#878787", "black")) +
+    geom_hline(yintercept = 0.5, color = "red") +
     xlab("Position") +
     ylab("Prediction") +
     ylim(c(0,1)) +
+    labs(tag = "A") +
     scale_x_continuous(breaks = seq(0, length(lactoferrin_preds[["pos"]])+9, by = 20), limits = c(0,708), expand = c(0.01,0.01))+
     theme_bw()
 }
@@ -119,14 +120,15 @@ get_lactoferrin_profile_plot <- function(lactoferrin_detailed_preds) {
 
 get_thrombin_mers_plot <- function(thrombin_preds) {
   ggplot(thrombin_preds, aes(x = pos, y = pred)) +
-    geom_hline(yintercept = 0.5, color = "red") +
-    geom_rect(mapping = aes(xmin = 597, xmax = 622, ymin = 0, ymax = 1), fill = "#f8766d") +
+    geom_rect(mapping = aes(xmin = 527, xmax = 622, ymin = 0, ymax = 1), fill = "#f8766d") +
     geom_segment(x = 1:length(thrombin_preds[["pos"]]), y = thrombin_preds[["pred"]],
                  xend = 10:(length(thrombin_preds[["pos"]])+9), yend = thrombin_preds[["pred"]],
                  colour = ifelse(thrombin_preds[["pred"]] < 0.5, "#878787", "black")) +
+    geom_hline(yintercept = 0.5, color = "red") +
     xlab("Position") +
     ylab("Prediction") +
     ylim(c(0,1)) +
+    labs(tag = "B") +
     scale_x_continuous(breaks = seq(0, length(thrombin_preds[["pos"]])+9, by = 20), limits = c(0,622), expand = c(0.01,0.01)) +
     theme_bw()
 }

@@ -85,6 +85,9 @@ make(benchmark_AmpGram)
 
 file.copy(from = ".drake", to = paste0(data_path, "drake-cache"), recursive = TRUE, overwrite = TRUE)
 
+benchmark_summ <- readd(benchmark_summ)
+Nobles_datasets_benchmark_res <- readd(Nobles_datasets_benchmark_res)
+
 write.csv(benchmark_summ, file = paste0(data_path, "publication-results/benchmark_results.csv"), row.names = FALSE)
 write.csv(Nobles_datasets_benchmark_res, file = paste0(data_path, "publication-results/Nobles_benchmark_results.csv"), 
           row.names = FALSE)
