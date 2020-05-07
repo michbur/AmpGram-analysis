@@ -127,3 +127,58 @@ preprocess_Nobles_datasets <- function() {
   amp_only <- filter(both_datasets, !is.na(AMP_target))
   amp_only
 }
+
+aggregate_Nobles_datasets_benchmark_res <- function(selected_data) {
+  left_join(selected_data[,c(4:9, 15:17)], ampscanner_res) %>% 
+    left_join(Nobles_datasets_preds[,c("source_peptide", "Probability")]) %>% 
+    mutate(`CAMP.RF..score` = ifelse(is.infinite(`CAMP.RF..score`), 0, `CAMP.RF..score`)) %>% 
+    mutate(`ADAM.score` = ifelse(is.infinite(`ADAM.score`), -3, `ADAM.score`)) %>% 
+    mutate(`CAMP.SVM..score` = ifelse(is.infinite(`CAMP.SVM..score`), 0, `CAMP.SVM..score`)) %>% 
+    mutate(Ampscanner = ifelse(is.na(Ampscanner), 0, Ampscanner)) %>% 
+    setNames(c("ADAM", "CAMPR3-RF", "CAMPR3-SVM", "DBAASP", "MLAMP", "AMPA", "Dataset", "source_peptide", "target", "AMPScanner V2", "AmpGram")) %>% 
+    pivot_longer(c("ADAM", "CAMPR3-RF", "CAMPR3-SVM", "DBAASP", "MLAMP", "AMPA", "AMPScanner V2", "AmpGram"), names_to = "Software",
+                 values_to = "Probability") %>% 
+    mutate(Decision = case_when(Software %in% c("CAMPR3-RF", "CAMPR3-SVM", "AmpGram", "AMPScanner V2") & Probability >= 0.5 ~ "TRUE",
+                                Software %in% c("CAMPR3-RF", "CAMPR3-SVM", "AmpGram", "AMPScanner V2") & Probability < 0.5 ~ "FALSE",
+                                Software == "MLAMP" & Probability >= 0.6 ~ "TRUE",
+                                Software == "MLAMP" & Probability < 0.6 ~ "FALSE",
+                                Software == "DBAASP" & Probability == 1 ~ "TRUE",
+                                Software == "DBAASP" & Probability == -1 ~ "FALSE",
+                                Software == "ADAM" & Probability > 0 ~ "TRUE",
+                                Software == "ADAM" & Probability <= 0 ~ "FALSE",
+                                Software == "AMPA" & Probability > 0 ~ "TRUE",
+                                Software == "AMPA" & Probability == -1 ~ "FALSE")) %>% 
+    mutate(Decision = as.factor(Decision),
+           target = as.factor(target),
+           Software = relevel(as.factor(Software), "AmpGram")) %>% 
+    group_by(Dataset, Software) %>% 
+    summarise(AUC = auc(target, Probability),
+              MCC = mlr3measures::mcc(target, Decision, 'TRUE'),
+              TP = sum(Decision == 'TRUE' & target == 'TRUE'),
+              TN = sum(Decision == 'FALSE' & target == 'FALSE'),
+              FP = sum(Decision == 'TRUE' & target == 'FALSE'),
+              FN = sum(Decision == 'FALSE' & target == 'TRUE'),
+              Precision = mlr3measures::precision(target, Decision, 'TRUE'),
+              Sensitivity = mlr3measures::sensitivity(target, Decision, 'TRUE'),
+              Specificity = mlr3measures::specificity(target, Decision, 'TRUE'))
+}
+
+
+
+find_apd_and_train_seqs <- function() {
+  # Our train-test sequences:
+  dbamp <- readd(cdhit_data)
+  dbamp_ids <- readd(cdhit_data_ids)
+  seq_list <- c(dbamp[unlist(lapply(dbamp_ids, function(ith_len_group) ith_len_group[["traintest"]]))])
+  dbamp_seq_list <- lapply(1:length(seq_list), function(i) {
+    paste(seq_list[[i]], collapse = "")
+  }) %>% unlist
+  # AMP sequences in DAMPD:
+  dampd <- filter(readd(amp_only), dataset == "DAMPD" & AMP_target == "TRUE")[["Peptide.sequence"]]
+  # Our train-test in DAMPD
+  dbamp_dampd <- dbamp_seq_list[which(dbamp_seq_list %in% dampd)]
+  # APD sequences in DAMPD
+  apd <- read.csv("./data/apd_df.csv", stringsAsFactors = FALSE)[["Sequence"]]
+  apd_dampd <- apd[which(apd %in% dampd)]
+  union(dbamp_dampd, apd_dampd)
+}

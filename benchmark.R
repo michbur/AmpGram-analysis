@@ -47,38 +47,9 @@ benchmark_AmpGram <- drake_plan(full_benchmark_mer_preds = mutate(benchmark_mer_
                                 ampscanner_res = read.csv("./data/ampscanner_noble.csv", stringsAsFactors = FALSE)[, c(1,3)] %>% 
                                   setNames(c("source_peptide", "Ampscanner")),
                                 amp_only = filter(Nobles_benchmark_datasets, !is.na(AMP_target)),
-                                Nobles_datasets_benchmark_res = left_join(amp_only[,c(4:9, 15:17)], ampscanner_res) %>% 
-                                  left_join(Nobles_datasets_preds[,c("source_peptide", "Probability")]) %>% 
-                                  mutate(`CAMP.RF..score` = ifelse(is.infinite(`CAMP.RF..score`), 0, `CAMP.RF..score`)) %>% 
-                                  mutate(`ADAM.score` = ifelse(is.infinite(`ADAM.score`), -3, `ADAM.score`)) %>% 
-                                  mutate(`CAMP.SVM..score` = ifelse(is.infinite(`CAMP.SVM..score`), 0, `CAMP.SVM..score`)) %>% 
-                                  mutate(Ampscanner = ifelse(is.na(Ampscanner), 0, Ampscanner)) %>% 
-                                  setNames(c("ADAM", "CAMPR3-RF", "CAMPR3-SVM", "DBAASP", "MLAMP", "AMPA", "Dataset", "source_peptide", "target", "AMPScanner V2", "AmpGram")) %>% 
-                                  pivot_longer(c("ADAM", "CAMPR3-RF", "CAMPR3-SVM", "DBAASP", "MLAMP", "AMPA", "AMPScanner V2", "AmpGram"), names_to = "Software",
-                                               values_to = "Probability") %>% 
-                                  mutate(Decision = case_when(Software %in% c("CAMPR3-RF", "CAMPR3-SVM", "AmpGram", "AMPScanner V2") & Probability >= 0.5 ~ "TRUE",
-                                                              Software %in% c("CAMPR3-RF", "CAMPR3-SVM", "AmpGram", "AMPScanner V2") & Probability < 0.5 ~ "FALSE",
-                                                              Software == "MLAMP" & Probability >= 0.6 ~ "TRUE",
-                                                              Software == "MLAMP" & Probability < 0.6 ~ "FALSE",
-                                                              Software == "DBAASP" & Probability == 1 ~ "TRUE",
-                                                              Software == "DBAASP" & Probability == -1 ~ "FALSE",
-                                                              Software == "ADAM" & Probability > 0 ~ "TRUE",
-                                                              Software == "ADAM" & Probability <= 0 ~ "FALSE",
-                                                              Software == "AMPA" & Probability > 0 ~ "TRUE",
-                                                              Software == "AMPA" & Probability == -1 ~ "FALSE")) %>% 
-                                  mutate(Decision = as.factor(Decision),
-                                         target = as.factor(target),
-                                         Software = relevel(as.factor(Software), "AmpGram")) %>% 
-                                  group_by(Dataset, Software) %>% 
-                                  summarise(AUC = auc(target, Probability),
-                                            MCC = mlr3measures::mcc(target, Decision, 'TRUE'),
-                                            TP = sum(Decision == 'TRUE' & target == 'TRUE'),
-                                            TN = sum(Decision == 'FALSE' & target == 'FALSE'),
-                                            FP = sum(Decision == 'TRUE' & target == 'FALSE'),
-                                            FN = sum(Decision == 'FALSE' & target == 'TRUE'),
-                                            Precision = mlr3measures::precision(target, Decision, 'TRUE'),
-                                            Sensitivity = mlr3measures::sensitivity(target, Decision, 'TRUE'),
-                                            Specificity = mlr3measures::specificity(target, Decision, 'TRUE'))
+                                Nobles_datasets_benchmark_res = aggregate_Nobles_datasets_benchmark_res(amp_only),
+                                DAMPD_seqs_to_remove = find_apd_and_train_seqs(),
+                                Nobles_datasets_benchmark_DAMPD_res = aggregate_Nobles_datasets_benchmark_res(filter(amp_only, !(`Peptide.sequence` %in% DAMPD_seqs_to_remove) & dataset == "DAMPD"))
                                 )
 
 make(benchmark_AmpGram)
@@ -121,3 +92,14 @@ lapply(unique(benchmark_summ[["len_group"]]), function(ith_group) {
     print(include.rownames = FALSE, booktabs = TRUE) %>% 
     writeLines(.,paste0(data_path, "publication-results/table_", ith_group, ".txt"))
 })
+
+
+# Generate table with benchmark on DAMPD dataset excluding sequences used for training AmpGram or AmpScanner
+Nobles_datasets_benchmark_DAMPD_res %>% 
+  ungroup %>% 
+  select(c("Software", "AUC", "Precision", "Sensitivity", "Specificity")) %>% 
+  xtable(digits = 4, 
+         caption = "",
+         label = "DAMPD_benchmark") %>% 
+  print(include.rownames = FALSE, booktabs = TRUE) %>% 
+  writeLines(.,paste0(data_path, "publication-results/DAMPD_benchmark.txt"))
