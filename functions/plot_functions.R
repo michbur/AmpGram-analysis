@@ -102,8 +102,10 @@ get_lactoferrin_mers_plot <- function(lactoferrin_preds) {
     ylab("Prediction") +
     ylim(c(0,1)) +
     labs(tag = "A") +
-    scale_x_continuous(breaks = seq(0, length(lactoferrin_preds[["pos"]])+9, by = 20), limits = c(0,708), expand = c(0.01,0.01))+
-    theme_bw()
+    ggtitle("Lactoferrin") +
+    scale_x_continuous(breaks = seq(0, length(lactoferrin_preds[["pos"]])+9, by = 20), limits = c(0,708), expand = c(0.01,0.01)) +
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))
 }
 
 get_lactoferrin_profile_plot <- function(lactoferrin_detailed_preds) {
@@ -129,8 +131,10 @@ get_thrombin_mers_plot <- function(thrombin_preds) {
     ylab("Prediction") +
     ylim(c(0,1)) +
     labs(tag = "B") +
+    ggtitle("Thrombin") +
     scale_x_continuous(breaks = seq(0, length(thrombin_preds[["pos"]])+9, by = 20), limits = c(0,622), expand = c(0.01,0.01)) +
-    theme_bw()
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))
 }
 
 

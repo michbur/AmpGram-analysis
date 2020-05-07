@@ -57,7 +57,9 @@ plots_AmpGram <- drake_plan(neg = readd(negative_data),
                             thrombin_preds = get_prot_preds("thrombin", c(527:622)),
                             thrombin_detailed_preds = get_detailed_preds(thrombin_preds),
                             thrombin_mers_plot = get_thrombin_mers_plot(thrombin_preds),
-                            Nobles_benchmark_plot = get_Nobles_benchmark_plot(readd(Nobles_datasets_benchmark_res)),
+                            Nobles_benchmark_plot = get_Nobles_benchmark_plot(bind_rows(filter(readd(Nobles_datasets_benchmark_res), Dataset == "APD"),
+                                                                                        readd(Nobles_datasets_benchmark_DAMPD_res))),
+                            supp_Nobles_benchmark_plot = get_Nobles_benchmark_plot(filter(readd(Nobles_datasets_benchmark_res), Dataset == "DAMPD"))
                             
 )
 
@@ -88,4 +90,8 @@ dev.off()
 
 cairo_ps(filename = paste0(data_path, "publication-results/proteins_mers.eps"), width = 10, height = 5)
 lactoferrin_mers_plot / thrombin_mers_plot
+dev.off()
+
+cairo_ps(filename = paste0(data_path, "publication-results/supp_DAMPD_benchmark.eps"), width = 10, height = 2.5)
+readd(supp_Nobles_benchmark_plot)
 dev.off()
