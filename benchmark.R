@@ -69,10 +69,7 @@ lapply(unique(Nobles_datasets_benchmark_res[["Dataset"]]), function(ith_set) {
   filter(Nobles_datasets_benchmark_res, Dataset == ith_set) %>% 
     ungroup %>% 
     select(c("Software", "AUC", "Precision", "Sensitivity", "Specificity")) %>% 
-    xtable(digits = 4, 
-           caption = "",
-           label = paste0("Nobles_benchmark_", ith_set)) %>% 
-    print(include.rownames = FALSE, booktabs = TRUE) %>% 
+    format_table(caption = "", label = "", range=2L:5) %>% 
     writeLines(.,paste0(data_path, "publication-results/benchmark_Noble_", ith_set, ".txt"))
 })
 
@@ -86,10 +83,7 @@ lapply(unique(benchmark_summ[["len_group"]]), function(ith_group) {
     mutate(Software = relevel(as.factor(Software), "AmpGram")) %>% 
     select(-c(len_group, prob)) %>% 
     arrange(Software) %>% 
-    xtable(digits = 4, 
-           caption = "",
-           label = paste0("benchmark_", ith_group)) %>% 
-    print(include.rownames = FALSE, booktabs = TRUE) %>% 
+    format_table(caption = "", label = "", range=2L:5) %>% 
     writeLines(.,paste0(data_path, "publication-results/table_", ith_group, ".txt"))
 })
 
@@ -98,8 +92,5 @@ lapply(unique(benchmark_summ[["len_group"]]), function(ith_group) {
 Nobles_datasets_benchmark_DAMPD_res %>% 
   ungroup %>% 
   select(c("Software", "AUC", "Precision", "Sensitivity", "Specificity")) %>% 
-  xtable(digits = 4, 
-         caption = "",
-         label = "DAMPD_benchmark") %>% 
-  print(include.rownames = FALSE, booktabs = TRUE) %>% 
+  format_table(caption = "", label = "", range=2L:5) %>% 
   writeLines(.,paste0(data_path, "publication-results/DAMPD_benchmark.txt"))
