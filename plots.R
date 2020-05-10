@@ -50,6 +50,7 @@ plots_AmpGram <- drake_plan(neg = readd(negative_data),
                                                                                          Sensitivity, Specificity), values_to = "Value"),
                             benchmark_summ_plot = get_benchmark_summ_plot(filter(benchmark_summ_table, 
                                                                                  name != "MCC" & len_group %in% c("all", "(60,710]"))),
+                            benchmark_summ_supp_plot = get_benchmark_summ_plot(filter(benchmark_summ_table, name != "MCC")),
                             lactoferrin_preds = get_prot_preds("bovine_lactoferrin", c(20:30, 36:60, 287:303)),
                             lactoferrin_detailed_preds = get_detailed_preds(lactoferrin_preds),
                             lactoferrin_profile_plot = get_lactoferrin_profile_plot(lactoferrin_detailed_preds),
@@ -94,4 +95,8 @@ dev.off()
 
 cairo_ps(filename = paste0(data_path, "publication-results/supp_DAMPD_benchmark.eps"), width = 10, height = 2.5)
 readd(supp_Nobles_benchmark_plot)
+dev.off()
+
+cairo_ps(filename = paste0(data_path, "publication-results/benchmark_all.eps"), width = 10, height = 8)
+readd(benchmark_summ_supp_plot)
 dev.off()
