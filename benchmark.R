@@ -13,7 +13,7 @@ requireNamespace("mlr3measures")
 load("./data/benchmark_data.RData")
 source("./functions/do_cv.R")
 source("./functions/benchmark_functions.R")
-source("./functions/test_alphabet.R")
+source("./functions/train_model_peptides.R")
 
 if(Sys.info()[["nodename"]] %in% c("amyloid", "phobos", "huawei")) {
   data_path <- "/home/michal/Dropbox/AMP-analysis/AmpGram-analysis/"

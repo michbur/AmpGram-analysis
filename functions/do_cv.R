@@ -57,21 +57,3 @@ do_cv <- function(mer_df, binary_ngrams) {
   }) %>% bind_rows()
 }
 
-
-do_cv_degenerate <- function(mer_df, binary_ngrams, elements_groups) {
-  pblapply(elements_groups, function(ith_alphabet){
-    deg_binary_ngrams <- degenerate_ngrams(binary_ngrams, string2list(ith_alphabet), binarize = TRUE)
-    do_cv(mer_df, deg_binary_ngrams) %>% 
-      mutate(alphabet = ith_alphabet) %>% 
-      write.csv(file = paste0(data_path, "results/", ith_alphabet, ".csv"), 
-                row.names = FALSE)
-  })
-}
-
-
-# peptide_preds <- group_by(preds, source_peptide, target) %>% 
-#   summarise(peptide_pred = max(pred))
-# rbind(HMeasure(as.numeric(peptide_preds[["target"]]), 
-#                peptide_preds[["peptide_pred"]])[["metrics"]],
-#       fold = ith_fold,
-#       group = ith_group)

@@ -7,7 +7,7 @@ library(ranger)
 library(xtable)
 library(patchwork)
 source("./functions/benchmark_functions.R")
-source("./functions/test_alphabet.R")
+source("./functions/train_model_peptides.R")
 source("./functions/plot_functions.R")
 load("./data/benchmark_data.RData")
 

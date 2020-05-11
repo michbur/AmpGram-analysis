@@ -24,8 +24,7 @@ source("./functions/writing_benchmarks.R")
 source("./functions/get_mers.R")
 source("./functions/count_ampgrams.R")
 source("./functions/do_cv.R")
-source("./functions/degenerate_ngrams.R")
-source("./functions/test_alphabet.R")
+source("./functions/train_model_peptides.R")
 
 analysis_AmpGram <- drake_plan(raw_data = read_raw_data(),
                                nonstandard_AMPs = analyze_nonstandard_AMPs(raw_data),
@@ -51,11 +50,7 @@ analysis_AmpGram <- drake_plan(raw_data = read_raw_data(),
                                                           ns = c(3, 3),
                                                           ds = list(c(1, 0), c(1, 1))),
                                binary_ngrams = cbind(ngrams12, ngrams3_1, ngrams3_2),
-                               cv_raw = do_cv(mer_df, binary_ngrams),
-                               alphabets = create_alphabets(),
-                               cv_degenerate = do_cv_degenerate(mer_df, binary_ngrams, alphabets),
-                               all_alphabets_preds = test_all_alphabets(data_path, alphabets),
-                               measures_alphabets = calc_measures_alphabets(all_alphabets_preds))
+                               cv_raw = do_cv(mer_df, binary_ngrams))
 
 make(analysis_AmpGram, seed = 990, jobs = 8)
 
